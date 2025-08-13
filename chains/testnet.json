@@ -45,14 +45,14 @@
                     {
                         "name": "user0",
                         "amount": "100000%DENOM%",
-                        "address": "kudo1asmfdfg9nq5yfvs8et24ssu7wdx2a6unrzjvew",
-                        "mnemonic": "phone volcano slab panda alcohol cousin crouch ecology budget useful antenna gym school afraid move pride shoot easy small casual misery stick will expose"
+                        "address": "kudo1tzjn054vsd48udrm2acaqv2taceedp8l86mjqz",
+                        "mnemonic": "distance draw visit love garbage dose until tenant galaxy quiz slogan erosion else remove glance melt clump recall crystal cook west wreck crazy joy"
                     },
                     {
                         "name": "user1",
                         "amount": "100000%DENOM%",
-                        "address": "kudo1fz8seeax8jcwgvlws6m9c09870crdc2sa5m6wh",
-                        "mnemonic": "solve turn hello script capital dinner truly abandon few laptop arm early exit engage empty south seek orchard aunt diagram frame cloth egg popular"
+                        "address": "kudo1f0zjcgf6xlg7rfdmhdnq8nfujtq6h3u2g08wyx",
+                        "mnemonic": "aunt pave fancy seat rib winner before flame relief picnic course victory road balance wheel initial own slide lonely smart remain donkey report pen"
                     }
                 ]
             },
@@ -79,7 +79,7 @@
             "number_node": 0,
             "chain_type": "cosmos",
             "coin_type": 60,
-            "binary": "kudod",
+            "binary": "kudorad",
             "bech32_prefix": "kudo",
             "denom": "kud",
             "trusting_period": "336h",
@@ -138,14 +138,14 @@
                     {
                         "name": "user0",
                         "amount": "100000%DENOM%",
-                        "address": "cosmos1xjkzvqhvjyhq2le7uuy99fzjxypvr04w4fpcad",
-                        "mnemonic": "evil power hello radio sport brand eager dentist field civil fee alone among woman similar six empower into robot peanut crush shaft insane bomb"
+                        "address": "cosmos1kqq07luenq3ut8893fsey6dql5tga8ajm3up8u",
+                        "mnemonic": "valid dwarf paper recycle good voyage cupboard swarm window session reform day jaguar label twelve sniff make throw shed pencil casual lava cereal address"
                     },
                     {
                         "name": "user1",
                         "amount": "100000%DENOM%",
-                        "address": "cosmos16rnat0et9h9xj3pg6cl093juvzqx9hjwt0lyul",
-                        "mnemonic": "weasel liberty allow output protect glass priority street someone glare fancy wear parade pluck helmet pool dust steel flee curve hope hamster boat kangaroo"
+                        "address": "cosmos1f9pumw53f6wxhgaxcvf2ja3yy5wwcnkhk90ax4",
+                        "mnemonic": "price core decide border acid suspect squeeze seed girl oak nest print remain cotton absorb toddler island adjust bachelor regret dragon toilet vintage metal"
                     }
                 ]
             },

@@ -8,7 +8,7 @@
   "pretty_name": "Kudora",
   "chain_id": "localchain-1",
   "bech32_prefix": "kudo",
-  "daemon_name": "kudod",
+  "daemon_name": "kudorad",
   "node_home": "$HOME/.kudora",
   "key_algos": [
     "eth_secp256k1"

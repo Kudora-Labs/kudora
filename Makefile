@@ -65,7 +65,7 @@ build_tags_comma_sep := $(subst $(empty),$(comma),$(build_tags))
 # flags '-s -w' resolves an issue with xcode 16 and signing of go binaries
 # ref: https://github.com/golang/go/issues/63997
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=kudora \
-		  -X github.com/cosmos/cosmos-sdk/version.AppName=kudod \
+		  -X github.com/cosmos/cosmos-sdk/version.AppName=kudorad \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
@@ -92,11 +92,11 @@ ifeq ($(OS),Windows_NT)
 	$(error wasmd server not supported. Use "make build-windows-client" for client)
 	exit 1
 else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/kudod ./cmd/kudod
+	go build -mod=readonly $(BUILD_FLAGS) -o build/kudorad ./cmd/kudorad
 endif
 
 build-windows-client: go.sum
-	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/kudod.exe ./cmd/kudod
+	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/kudorad.exe ./cmd/kudorad
 
 build-contract-tests-hooks:
 ifeq ($(OS),Windows_NT)
@@ -106,7 +106,7 @@ else
 endif
 
 install: go.sum
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/kudod
+	go install -mod=readonly $(BUILD_FLAGS) ./cmd/kudorad
 
 ########################################
 ### Tools & dependencies
@@ -122,7 +122,7 @@ go.sum: go.mod
 draw-deps:
 	@# requires brew install graphviz or apt-get install graphviz
 	go install github.com/RobotsAndPencils/goviz@latest
-	@goviz -i ./cmd/kudod -d 2 | dot -Tpng -o dependency-graph.png
+	@goviz -i ./cmd/kudorad -d 2 | dot -Tpng -o dependency-graph.png
 
 clean:
 	rm -rf snapcraft-local.yaml build/
@@ -297,14 +297,14 @@ setup-testnet: mod-tidy is-localic-installed install local-image set-testnet-con
 # Run this before testnet keys are added
 # This chain id is used in the testnet.json as well
 set-testnet-configs:
-	kudod config set client chain-id localchain_9000-1
-	kudod config set client keyring-backend test
-	kudod config set client output text
+	kudorad config set client chain-id localchain_9000-1
+	kudorad config set client keyring-backend test
+	kudorad config set client output text
 
 # import keys from testnet.json into test keyring
 setup-testnet-keys:
-	-`echo "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry" | kudod keys add acc0 --recover`
-	-`echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise" | kudod keys add acc1 --recover`
+	-`echo "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry" | kudorad keys add acc0 --recover`
+	-`echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise" | kudorad keys add acc1 --recover`
 
 testnet: setup-testnet
 	spawn local-ic start testnet

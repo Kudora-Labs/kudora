@@ -15,7 +15,7 @@ export MONIKER="localvalidator"
 export KEYALGO="eth_secp256k1"
 export KEYRING=${KEYRING:-"test"}
 export HOME_DIR=$(eval echo "${HOME_DIR:-"~/.kudora"}")
-export BINARY=${BINARY:-kudod}
+export BINARY=${BINARY:-kudorad}
 export DENOM=${DENOM:-kud}
 
 export CLEAN=${CLEAN:-"false"}

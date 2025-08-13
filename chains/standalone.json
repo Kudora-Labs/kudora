@@ -45,14 +45,14 @@
                     {
                         "name": "user0",
                         "amount": "100000%DENOM%",
-                        "address": "kudo1asmfdfg9nq5yfvs8et24ssu7wdx2a6unrzjvew",
-                        "mnemonic": "phone volcano slab panda alcohol cousin crouch ecology budget useful antenna gym school afraid move pride shoot easy small casual misery stick will expose"
+                        "address": "kudo1tzjn054vsd48udrm2acaqv2taceedp8l86mjqz",
+                        "mnemonic": "distance draw visit love garbage dose until tenant galaxy quiz slogan erosion else remove glance melt clump recall crystal cook west wreck crazy joy"
                     },
                     {
                         "name": "user1",
                         "amount": "100000%DENOM%",
-                        "address": "kudo1fz8seeax8jcwgvlws6m9c09870crdc2sa5m6wh",
-                        "mnemonic": "solve turn hello script capital dinner truly abandon few laptop arm early exit engage empty south seek orchard aunt diagram frame cloth egg popular"
+                        "address": "kudo1f0zjcgf6xlg7rfdmhdnq8nfujtq6h3u2g08wyx",
+                        "mnemonic": "aunt pave fancy seat rib winner before flame relief picnic course victory road balance wheel initial own slide lonely smart remain donkey report pen"
                     }
                 ]
             },
@@ -76,7 +76,7 @@
             "number_node": 0,
             "chain_type": "cosmos",
             "coin_type": 60,
-            "binary": "kudod",
+            "binary": "kudorad",
             "bech32_prefix": "kudo",
             "denom": "kud",
             "trusting_period": "336h",

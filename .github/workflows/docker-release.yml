@@ -69,6 +69,6 @@ jobs:
           build-target: make install
           local: true
           binaries: |
-            - /go/bin/kudod
+            - /go/bin/kudorad
           build-env: |
             - BUILD_TAGS=muslc

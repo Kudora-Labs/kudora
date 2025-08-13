@@ -32,7 +32,7 @@ var (
 	Name  = "kudora"
 
 	ChainID = "localchain_9000-1"
-	Binary  = "kudod"
+	Binary  = "kudorad"
 	Bech32  = "kudo"
 	ibcPath = "ibc-path"
 

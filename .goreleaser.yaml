@@ -34,8 +34,8 @@ builds:
       # - windows_arm64
       # - windows_386
     dir: .
-    main: ./cmd/kudod
-    binary: kudod
+    main: ./cmd/kudorad
+    binary: kudorad
     builder: go
     gobinary: go
     command: build
