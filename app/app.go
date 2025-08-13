@@ -184,7 +184,7 @@ const (
 	NodeDir      = ".kudora"
 	Bech32Prefix = "kudo"
 
-	ChainID = "localchain_9000-1"
+	ChainID = "kudora_12000-1"
 )
 
 var (
@@ -215,7 +215,7 @@ var (
 	BaseDenomUnit int64 = 18
 
 	BaseDenom    = "kud"
-	DisplayDenom = "MY_DENOM_DISPLAY"
+	DisplayDenom = "kudos"
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
 	Bech32PrefixAccAddr = Bech32Prefix
