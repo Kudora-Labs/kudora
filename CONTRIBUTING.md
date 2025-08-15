@@ -23,10 +23,7 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 ### Prerequisites
 
 - Go 1.23+
-- Docker & Docker Compose
 - Make
-- Git
-- Node.js (for EVM tooling)
 
 ### Setup Development Environment
 
@@ -37,13 +34,123 @@ cd kudora
 
 # Add upstream remote
 git remote add upstream https://github.com/kudora-labs/kudora.git
-
-# Install dependencies and build
-make install
-
-# Start local testnet to verify setup
-make sh-testnet
 ```
+
+### Local Node Setup
+
+Follow these steps to build and run a local Kudora node:
+
+#### 1. Build and Install
+
+```bash
+make install
+```
+
+_Compiles and installs the kudorad binary (Kudora daemon)_
+
+#### 2. Configure PATH
+
+The `kudorad` binary needs to be accessible in your system's `$PATH`:
+
+**MacOS (zsh):**
+
+```bash
+echo 'export PATH="$(go env GOPATH)/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**Windows:**
+
+```cmd
+# Add $(go env GOPATH)\bin to your PATH environment variable
+```
+
+**Linux:**
+
+```bash
+echo 'export PATH="$(go env GOPATH)/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### 3. Initialize Node
+
+```bash
+kudorad init Node-1 --chain-id kudora_12000-1 --home ./node-1
+```
+
+_Creates a new blockchain node named "Node-1" with chain ID "kudora_12000-1", storing data in `./node-1` directory_
+
+#### 4. Create Wallet
+
+```bash
+kudorad keys add alice --keyring-backend file --home ./node-1
+```
+
+_Creates a new wallet/account named "alice" using file-based keyring storage_
+
+#### 5. Setup Genesis Account
+
+```bash
+kudorad genesis add-genesis-account alice 1800000000000000000000000000kud --home ./node-1 --keyring-backend file
+```
+
+_Adds Alice's account to the genesis block with 1.8 billion KUD tokens initial balance_
+
+#### 6. Create Genesis Transaction
+
+```bash
+kudorad genesis gentx alice 1000000000000000000kud --chain-id=kudora_12000-1 --keyring-backend file --home=./node-1
+```
+
+_Creates a genesis transaction where Alice stakes 1 billion KUD to become a founding validator_
+
+#### 7. Collect Genesis Transactions
+
+```bash
+kudorad genesis collect-gentxs --home=./node-1
+```
+
+_Collects all genesis transactions and incorporates them into the genesis block_
+
+#### 8. Configure Client
+
+```bash
+kudorad config set client chain-id kudora_12000-1 --home ./node-1
+```
+
+_Sets the default chain ID for client commands_
+
+#### 9. Validate Genesis
+
+```bash
+kudorad genesis validate-genesis --home=./node-1
+```
+
+_Validates that the genesis file is properly formatted and valid_
+
+#### 10. Enable APIs
+
+Edit `./node-1/config/app.toml` and set:
+
+```toml
+[json-rpc]
+enable = true
+
+[api]
+enable = true
+```
+
+_Enables JSON-RPC and API endpoints for interacting with the blockchain_
+
+#### 11. Start Node
+
+```bash
+kudorad start --home ./node-1
+```
+
+_Starts the blockchain node and begins block production_
+
+This creates a **single-node blockchain network** where Alice is both the sole validator and initial token holder, suitable for local development and testing.
 
 ## How to Contribute
 
