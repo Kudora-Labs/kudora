@@ -75,12 +75,8 @@ source ~/.bashrc
 #### 3. Initialize Node with KUD Configuration
 
 ````bash
-# Initialize node
 kudorad init Node-1 --chain-id kudora_12000-1 --home ./node-1 --default-denom kud
-
-# # Configure KUD as staking denomination
-# sed -i '' 's/"stake"/"kud"/g' ./node-1/config/genesis.json
-# ```
+````
 
 _Creates a new blockchain node and configures KUD as the staking denomination_
 
