@@ -2,5 +2,11 @@
 configs/logs.json
 dist/
 
+# Ignorer tout ce qui commence par node
+node-1/
+node-2/
+node-3/
+node-4/
+
 # Create cosmos app
 web/

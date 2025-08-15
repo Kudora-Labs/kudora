@@ -72,13 +72,17 @@ echo 'export PATH="$(go env GOPATH)/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-#### 3. Initialize Node
+#### 3. Initialize Node with KUD Configuration
 
 ```bash
-kudorad init Node-1 --chain-id kudora_12000-1 --home ./node-1
-```
+# Initialize node
+kudorad init Node-1 --chain-id kudora_12000-1 --home ./node-1 --default-denom kud
 
-_Creates a new blockchain node named "Node-1" with chain ID "kudora_12000-1", storing data in `./node-1` directory_
+# # Configure KUD as staking denomination
+# sed -i '' 's/"stake"/"kud"/g' ./node-1/config/genesis.json
+# ```
+
+_Creates a new blockchain node and configures KUD as the staking denomination_
 
 #### 4. Create Wallet
 
@@ -93,6 +97,8 @@ _Creates a new wallet/account named "alice" using file-based keyring storage_
 ```bash
 kudorad genesis add-genesis-account alice 1800000000000000000000000000kud --home ./node-1 --keyring-backend file
 ```
+
+_Replace "alice" by her "address"
 
 _Adds Alice's account to the genesis block with 1.8 billion KUD tokens initial balance_
 
