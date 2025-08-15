@@ -74,7 +74,7 @@ source ~/.bashrc
 
 #### 3. Initialize Node with KUD Configuration
 
-```bash
+````bash
 # Initialize node
 kudorad init Node-1 --chain-id kudora_12000-1 --home ./node-1 --default-denom kud
 
@@ -88,7 +88,7 @@ _Creates a new blockchain node and configures KUD as the staking denomination_
 
 ```bash
 kudorad keys add alice --keyring-backend file --home ./node-1
-```
+````
 
 _Creates a new wallet/account named "alice" using file-based keyring storage_
 
@@ -98,7 +98,7 @@ _Creates a new wallet/account named "alice" using file-based keyring storage_
 kudorad genesis add-genesis-account alice 1800000000000000000000000000kud --home ./node-1 --keyring-backend file
 ```
 
-_Replace "alice" by her "address"
+\_Replace "alice" by her "address"
 
 _Adds Alice's account to the genesis block with 1.8 billion KUD tokens initial balance_
 
@@ -514,6 +514,128 @@ We use these labels to categorize issues:
 - [README.md](README.md): General project information
 - [API Documentation](docs/): Detailed API reference
 - [Cosmos SDK Docs](https://docs.cosmos.network/): Framework documentation
+
+## Continuous Integration
+
+### GitHub Workflows
+
+Our project uses several automated workflows to ensure code quality and reliability:
+
+#### Required Workflows
+
+- **`unit-test.yml`**: Runs unit tests on all pull requests and pushes
+
+  - Validates code functionality
+  - Must pass before merging
+
+- **`pr-title-format.yml`**: Validates pull request title format
+
+  - Ensures PR titles follow conventional commit format
+  - Required for proper changelog generation
+
+- **`link-check.yml`**: Validates all links in documentation
+  - Ensures documentation links are not broken
+  - Runs on documentation changes
+
+#### Release Workflows
+
+- **`release-binary.yml`**: Builds and releases binary artifacts
+
+  - Triggered on version tags
+  - Creates GitHub releases with compiled binaries
+
+- **`docker-release.yml`**: Builds and publishes Docker images
+  - Triggered on version tags
+  - Publishes to container registry
+
+#### Testing Workflows
+
+- **`interchaintest-e2e.yml`**: Runs end-to-end integration tests
+  - Tests full blockchain functionality
+  - Validates inter-blockchain communication
+
+#### Deployment Workflows
+
+- **`testnet-hetzner.yml`**: Deploys testnet infrastructure on Hetzner
+
+  - Automated testnet deployment
+  - Used for testing releases
+
+- **`testnet-self-hosted.yml.optional`**: Optional self-hosted testnet deployment
+  - Alternative deployment option
+  - For custom infrastructure setups
+
+### Workflow Requirements
+
+#### For Pull Requests
+
+All PRs must pass these checks before merging:
+
+1. **Unit Tests**: All unit tests must pass
+2. **PR Title Format**: Title must follow conventional commit format
+3. **Link Check**: Documentation links must be valid (if docs changed)
+4. **Code Review**: At least 1 approved review required
+
+#### For Releases
+
+Release workflows are automatically triggered when:
+
+1. A new version tag is pushed (e.g., `v1.0.0`)
+2. Binary and Docker image builds must complete successfully
+3. All tests must pass before release artifacts are published
+
+### Local Testing
+
+Before submitting a PR, ensure your changes pass locally:
+
+```bash
+# Run unit tests (same as CI)
+make test
+
+# Run linting (recommended)
+make lint
+
+# Format code (recommended)
+make format
+
+# Test documentation links (if you modified docs)
+make link-check  # if available, or manually verify links
+```
+
+### CI Troubleshooting
+
+#### Common CI Failures
+
+1. **Unit Test Failures**
+
+   - Run `make test` locally to reproduce
+   - Check test output for specific failures
+   - Ensure all dependencies are properly mocked
+
+2. **PR Title Format Failures**
+
+   - Ensure your PR title follows: `<type>(<scope>): <description>`
+   - Example: `feat(bank): add multi-send support`
+
+3. **Link Check Failures**
+
+   - Verify all documentation links are accessible
+   - Update or remove broken links
+   - Check for typos in URLs
+
+4. **E2E Test Failures**
+   - These test full blockchain functionality
+   - May indicate breaking changes
+   - Contact maintainers if unsure about failures
+
+#### Getting Help with CI
+
+If you encounter persistent CI failures:
+
+1. Check the workflow logs in the GitHub Actions tab
+2. Compare with recent successful runs
+3. Ask for help in the PR comments
+4. Contact maintainers via GitHub issues
 
 ## Recognition
 
