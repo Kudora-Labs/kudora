@@ -36,6 +36,16 @@ cd kudora
 git remote add upstream https://github.com/kudora-labs/kudora.git
 ```
 
+```bash
+# Don't forget to fetch and rebase frequently from kudora-labs/kudora main branch before create new feature and just before your PR
+git fetch upstream
+git rebase upstream/main
+git switch -c "feat(domaine): description"
+```
+
+_Even during the feature development, it is useful to rebase frequently_
+
+
 ### Local Node Setup
 
 Follow these steps to build and run a local Kudora node:
@@ -174,6 +184,15 @@ We welcome various types of contributions:
 3. **Fork the repository**: Create your own fork to work on
 4. **Create a branch**: Follow our branch naming convention
 
+```bash
+# Don't forget to fetch and rebase frequently from kudora-labs/kudora main branch before create new feature and just before your PR
+git fetch upstream
+git rebase upstream/main
+git switch -c "feat(domaine): description"
+```
+
+_Even during the feature development, it is useful to rebase frequently_
+
 ## Branch Naming Convention
 
 Use the following prefixes for your branch names:
@@ -247,14 +266,14 @@ git checkout main
 git merge upstream/main
 
 # Create and switch to your feature branch
-git checkout -b feat/your-feature-name
+git switch -c "feat(domaine): description"
 
 # Make your changes and commit
 git add .
 git commit -m "feat: add your feature description"
 
 # Push to your fork
-git push origin feat/your-feature-name
+git push origin "feat(domaine): description"
 ```
 
 ### 2. Create Pull Request
