@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-# Kudora
-
-readme test
-=======
 # Kudora Mainnet Node — Quickstart Guide
 
 This guide walks you from pulling the code to running a **Kudora** mainnet node. It includes brief explanations so you know _why_ each step matters.
@@ -226,5 +221,3 @@ kudorad config set client chain-id kudora_12000-1 --home "$NODE_HOME"
 # Validate & start
 kudorad genesis validate-genesis --home "$NODE_HOME"
 kudorad start --home "$NODE_HOME"
-```
->>>>>>> e642576c229d14990fe76e88ed38a9f4630679da
