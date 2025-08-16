@@ -508,7 +508,7 @@ We use these labels to categorize issues:
 ### Documentation
 
 - [README.md](README.md): General project information
-- [API Documentation](docs/): Detailed API reference
+<!-- - [API Documentation](docs/): Detailed API reference -->
 - [Cosmos SDK Docs](https://docs.cosmos.network/): Framework documentation
 
 ## Continuous Integration

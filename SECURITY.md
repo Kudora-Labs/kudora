@@ -8,7 +8,7 @@ We take the security of Kudora seriously. If you believe you have found a securi
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them via email to: **security@kudoralabs.com**
+Instead, please report them via email to: **kudora-labs@kudora.org**
 
 You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
 
@@ -121,13 +121,13 @@ Security advisories will be published in our GitHub Security Advisories section.
 
 For security-related inquiries:
 
-- **Email**: security@kudoralabs.com
+<!-- - **Email**: security@kudoralabs.com -->
 - **PGP Key**: [Available upon request]
 - **Response Time**: Within 48 hours
 
 For general questions about this security policy:
 
-- **Email**: team@kudoralabs.com
+- **Email**: kudora-labs@kudora.org
 - **GitHub Issues**: For non-security related questions only
 
 ## Acknowledgments
