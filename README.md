@@ -1,223 +1,319 @@
-# Kudora Mainnet Node — Quickstart Guide
+# Kudora — Quickstart Guide
 
-This guide walks you from pulling the code to running a **Kudora** mainnet node. It includes brief explanations so you know _why_ each step matters.
-
-> **Audience**: operators who are comfortable with a Linux terminal.
-> **Goal**: build the `kudorad` binary, initialize a node home, load the mainnet genesis, validate it, and start the node.
+> This guide offers two paths:
+>
+> - **Join the Kudora Mainnet.** Build `kudorad`, load the official `genesis.json`, and start syncing.
+> - **Launch a Local Devnet (LocalNet).** Spin up a private, single-validator network on your machine/LAN using the same Kudora binary—ideal for testing.
 
 ---
 
 ## 1) Prerequisites
 
-- A recent Linux distribution or macOS.
-- Go toolchain installed (match the project’s required Go version).
+- Recent Linux distribution or macOS
+- **Go 1.23** (required)
+- Build tools: `make`, a C compiler (GCC or Clang), plus `git`, `curl`, `jq`
+- Network access to fetch the code and `genesis.json`
+
+### Linux (Ubuntu/Debian) — install dependencies and Go
+
+For ARM64, replace `amd64` with `arm64` in the Go download URL.
+
+```bash
+sudo apt update
+sudo apt install -y build-essential make gcc git curl jq
+curl -fsSLO https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
+rm -f go1.23.0.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+echo 'export GOPATH=$HOME/go; export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
+source ~/.bashrc
+go version
+which go
+```
 
 ---
 
 ## 2) Pull the code & build
 
 ```bash
-# 2.1 Pull the source code
 git clone https://github.com/Kudora-Labs/kudora.git
 cd kudora
-
-# 2.2 Build & install the binary into your $GOBIN (often ~/go/bin)
 make install
-```
-
-### Verify the build
-
-Make sure the `kudorad` binary is available and runnable:
-
-```bash
 which kudorad
 kudorad version
 ```
 
-If `which` prints a path and `kudorad version` prints version info, compilation succeeded.
-
-> **Why this matters:** you need a working `kudorad` binary before you can initialize or run a node.
-
 ---
 
-## 3) Create your node directory
-
-Choose where your node’s data and configs will live. You can use an absolute path or a relative one. In this guide we’ll use a variable so the commands are easy to copy.
+## 3) Environment setup
 
 ```bash
-# Pick a directory for your node home
-export NODE_HOME=./path-to-the-node-dir
-mkdir -p "$NODE_HOME"
+export NODE_HOME="$HOME/.kudorad"
+export MONIKER="YOUR-MONIKER-NAME"
+```
+
+Choose **one** chain ID (Mainnet **or** LocalNet):
+
+**Mainnet:**
+
+```bash
+export CHAIN_ID="kudora_12000-1"
+```
+
+**LocalNet:**
+
+```bash
+export CHAIN_ID="kudora-local-1"
 ```
 
 ---
 
 ## 4) Initialize the node
 
-Give your node a **Moniker** (a friendly name that shows up in peers lists) and set the **chain ID**.
+A moniker is your node’s public nickname.
 
 ```bash
-# Replace <Moniker> with your node name (no spaces)
-kudorad init <Moniker> \
-  --chain-id kudora_12000-1 \
-  --home "$NODE_HOME"
+kudorad init "$MONIKER" --chain-id "$CHAIN_ID" --home "$NODE_HOME"
 ```
 
 ---
 
-## 4.1) (Optional) Create a brand-new chain from scratch
+## 5) Join the Kudora Mainnet
 
-> **Use this if you want to create your own local/test network instead of joining mainnet.**
-> You’ll create a key, allocate tokens in the genesis, generate a validator gentx, and collect it into the genesis.
+### 5.1 Set mainnet sources (pinned)
 
-1. **Create a wallet/key (stored in the file keyring):**
-
-```bash
-kudorad keys add <WalletName> \
-  --keyring-backend file \
-  --home "$NODE_HOME"
-```
-
-_You’ll be prompted for a passphrase and shown a mnemonic (save it securely)._
-
-2. **Allocate tokens to that wallet in genesis:**
+Do not change these; they pin network artifacts for reproducible setup.
 
 ```bash
-kudorad genesis add-genesis-account <WalletName> <amount><denom> \
-  --keyring-backend file \
-  --home "$NODE_HOME"
+export PINNED_COMMIT="c66fd3fc25d8a2a8cae8125141dd8843ee0bf847"
+export BASE="https://raw.githubusercontent.com/Kudora-Labs/kud-network-mainnet/$PINNED_COMMIT"
+export LISTS_URL="$BASE/networks/mainnet"
+export CFG="$NODE_HOME/config/config.toml"
 ```
 
-- **Format:** `<amount><denom>` (no spaces), e.g., `100000000stake` or `50000000utoken`.
-- Ensure **`<denom>`** matches your app’s configuration (the staking bond denom).
+### 5.2 Get the mainnet genesis
 
-3. **Create a validator gentx (self-delegate some of your tokens):**
+**Option 1 — Pinned from GitHub (recommended):**
 
 ```bash
-kudorad genesis gentx <WalletName> <amount><denom> \
-  --chain-id kudora_12000-1 \
-  --keyring-backend file \
-  --home "$NODE_HOME"
+curl -fsSL "$BASE/genesis.json" -o "$NODE_HOME/config/genesis.json"
 ```
 
-4. **Collect gentxs into the genesis:**
+**Option 2 — From a live RPC you trust:**
+
+```bash
+export RPC="https://rpc.example.net:26657"
+curl -fsSL "$RPC/genesis" | jq '.result.genesis // .genesis' > "$NODE_HOME/config/genesis.json"
+```
+
+### 5.3 Configure P2P
+
+Bind the P2P listener and choose **one** profile below (Full Node **or** Validator):
+
+```bash
+sed -i -E 's|^laddr = ".*"|laddr = "tcp://0.0.0.0:26656"|' "$CFG"
+```
+
+**Full Node profile:**
+
+```bash
+MAX_SEEDS=3
+MAX_PEERS=5
+SEEDS=$(curl -fsSL "$LISTS_URL/seeds.txt"  | grep -vE '^\s*(#|$)' | shuf -n "$MAX_SEEDS" | paste -sd,)
+PEERS=$(curl -fsSL "$LISTS_URL/peers.txt" | grep -vE '^\s*(#|$)' | shuf -n "$MAX_PEERS" | paste -sd,)
+sed -i -E "s|^seeds = \".*\"|seeds = \"$SEEDS\"|" "$CFG"
+sed -i -E "s|^persistent_peers = \".*\"|persistent_peers = \"$PEERS\"|" "$CFG"
+sed -i -E 's|^pex = .*|pex = true|' "$CFG"
+```
+
+**Validator profile:**
+
+```bash
+SENTRY_PEERS="NODEID_A@SENTRY_A:26656,NODEID_B@SENTRY_B:26656"
+SENTRY_IDS=$(printf "%s" "$SENTRY_PEERS" | tr ',' '\n' | cut -d@ -f1 | paste -sd,)
+sed -i -E 's|^seeds = ".*"|seeds = ""|' "$CFG"
+sed -i -E "s|^persistent_peers = \".*\"|persistent_peers = \"$SENTRY_PEERS\"|" "$CFG"
+sed -i -E "s|^unconditional_peer_ids = \".*\"|unconditional_peer_ids = \"$SENTRY_IDS\"|" "$CFG"
+sed -i -E 's|^pex = .*|pex = false|' "$CFG"
+```
+
+---
+
+## 6) If You Choose Validator Profile Only
+
+Set a wallet name once and reuse it everywhere.
+
+```bash
+export WALLET_NAME="YOUR-WALLET"
+```
+
+### 6.1 Put the wallet into the node’s keyring (choose one)
+
+```bash
+kudorad keys add "$WALLET_NAME" --keyring-backend file --home "$NODE_HOME"
+```
+
+```bash
+kudorad keys add "$WALLET_NAME" --recover --keyring-backend file --home "$NODE_HOME"
+```
+
+```bash
+kudorad keys import "$WALLET_NAME" ~/wallets/"$WALLET_NAME".txt --keyring-backend file --home "$NODE_HOME"
+```
+
+> Security tip: store the mnemonic offline and never share it.
+> Fund **`$WALLET_NAME`** with enough tokens for **self-delegation** and **fees** before broadcasting.
+
+### 6.2 Prepare & broadcast `create-validator`
+
+`SELF_AMOUNT_KUD`: The self-delegation you bond now, written as an integer in base `kud`.
+
+`MIN_SELF_KUD`: the minimum self-delegation your validator must always keep, as an integer in base kud; it cannot be lowered later, and if your self-delegation ever falls below this threshold the validator is jailed until you self-delegate back to at least `MIN_SELF_KUD` and then unjail; choose this value carefully because raising it later tightens your safety margin and you can’t roll it back. Written as an integer in base `kud`.
+
+`IDENTITY / WEBSITE / SECURITY / DETAILS`: Optional public metadata displayed by explorers for your validator.
+
+`COMMISSION_RATE`: the starting commission fraction you take from delegators’ rewards (e.g. `0.05` = 5%); it can change later but must stay ≤ `COMMISSION_MAX_RATE` and move by at most `COMMISSION_MAX_CHANGE_RATE` per 24h.
+
+`COMMISSION_MAX_RATE`: the hard ceiling your commission can ever reach (e.g. `0.10` = 10%); it’s fixed at creation and cannot be raised later.
+
+`COMMISSION_MAX_CHANGE_RATE`: the maximum amount you can change `COMMISSION_RATE` within a 24h window (e.g. `0.01` = up to ±1% per day); it’s set at creation and cannot be changed later.
+
+`CONS_PUBKEY_B64`: The consensus ed25519 public key in base64, read automatically from your node home.
+
+```bash
+export SELF_AMOUNT_KUD="1000000000000000000"
+export MIN_SELF_KUD="1000000000000000000"
+
+export IDENTITY=""
+export WEBSITE=""
+export SECURITY=""
+export DETAILS=""
+
+export COMMISSION_RATE="0.05"
+export COMMISSION_MAX_RATE="0.10"
+export COMMISSION_MAX_CHANGE_RATE="0.01"
+
+export CONS_PUBKEY_B64=$(
+  kudorad tendermint show-validator --home "$NODE_HOME" 2>/dev/null \
+  | jq -r '.key // .pub_key.key // .pubkey.key // .PubKey.value // .value'
+)
+
+cat > create-validator.json <<EOF
+{
+  "amount": "${SELF_AMOUNT_KUD}kud",
+  "commission-max-change-rate": "${COMMISSION_MAX_CHANGE_RATE}",
+  "commission-max-rate": "${COMMISSION_MAX_RATE}",
+  "commission-rate": "${COMMISSION_RATE}",
+  "details": "${DETAILS}",
+  "identity": "${IDENTITY}",
+  "min-self-delegation": "${MIN_SELF_KUD}",
+  "moniker": "${MONIKER}",
+  "pubkey": {
+    "@type": "/cosmos.crypto.ed25519.PubKey",
+    "key": "${CONS_PUBKEY_B64}"
+  },
+  "security": "${SECURITY}",
+  "website": "${WEBSITE}"
+}
+EOF
+
+export FEE_POLICY_URL="$BASE/networks/mainnet/fees/fee_policy.json"
+export GAS_PRICE=$(curl -fsSL "$FEE_POLICY_URL" | jq -r '.recommended_min_gas_price.low')
+
+kudorad tx staking create-validator ./create-validator.json \
+  --from "$WALLET_NAME" \
+  --keyring-backend file \
+  --home "$NODE_HOME" \
+  --chain-id "$CHAIN_ID" \
+  --gas auto \
+  --gas-adjustment 1.1 \
+  --gas-prices "$GAS_PRICE"
+
+rm -f ./create-validator.json
+```
+
+### 6.3 Verify validator status
+
+By operator address:
+
+```bash
+VALOPER=$(kudorad keys show "$WALLET_NAME" --bech val -a --keyring-backend file --home "$NODE_HOME")
+kudorad query staking validator "$VALOPER"
+```
+
+Check if you’re in the active Tendermint set right now:
+
+```bash
+CONS_ADDR=$(kudorad tendermint show-address --home "$NODE_HOME" 2>/dev/null || kudorad comet show-address --home "$NODE_HOME")
+kudorad query tendermint-validator-set --home "$NODE_HOME" --chain-id kudora_12000-1 \
+| jq -r '.validators[].address' | grep -q "$CONS_ADDR" \
+&& echo "✅ In active set" || echo "⏳ Not in active set yet"
+```
+
+---
+
+## 7) Launch a Local Devnet (LocalNet)
+
+**Read first:** All amounts below are **in base units `kud` (integers)**.
+
+- `GENESIS_AMOUNT`: Total tokens allocated to your wallet in genesis.
+- `GENTX_AMOUNT`: Portion of those tokens self-delegated in your validator gentx (must be ≤ `GENESIS_AMOUNT`).
+- `DENOM`: Base denom (here `kud`).
+
+### 7.1 Set LocalNet parameters
+
+```bash
+export DENOM="kud"
+export GENESIS_AMOUNT="100000000"
+export GENTX_AMOUNT="50000000"
+export KEYRING_BACKEND="file"
+```
+
+### 7.2 Create the wallet for LocalNet
+
+```bash
+kudorad keys add "$WALLET_NAME" --keyring-backend "$KEYRING_BACKEND" --home "$NODE_HOME"
+```
+
+### 7.3 Allocate tokens in genesis
+
+```bash
+kudorad genesis add-genesis-account "$WALLET_NAME" "${GENESIS_AMOUNT}${DENOM}" --keyring-backend "$KEYRING_BACKEND" --home "$NODE_HOME"
+```
+
+### 7.4 Create a validator gentx (self-delegate)
+
+```bash
+kudorad genesis gentx "$WALLET_NAME" "${GENTX_AMOUNT}${DENOM}" --chain-id "$CHAIN_ID" --keyring-backend "$KEYRING_BACKEND" --home "$NODE_HOME"
+```
+
+### 7.5 Collect gentxs into genesis
 
 ```bash
 kudorad genesis collect-gentxs --home "$NODE_HOME"
 ```
 
-5. **Validate and start your brand-new chain:**
-   Now skip to **Step 6 (Configure the client)**
-
-> If you follow this optional path, **do not** perform Step 5 (downloading the mainnet genesis).
-
 ---
 
-## 5) Load the mainnet genesis
-
-> **Skip this step** if you followed **4.1 Optional** to create a chain from scratch.
-
-Download the official `genesis.json` and place it into your node’s config directory.
+## 8) Configure the client
 
 ```bash
-# Fetch the pinned mainnet genesis
-curl -L \
-  -o "$NODE_HOME/config/genesis.json" \
-  "https://raw.githubusercontent.com/Kudora-Labs/kud-network-mainnet/c66fd3fc25d8a2a8cae8125141dd8843ee0bf847/genesis.json"
-```
-
-> **Why this matters:** The genesis file is the canonical starting state for the blockchain. If the wrong file is used, your node will reject the network (or vice versa).
-
----
-
-## 6) Configure the client (chain ID)
-
-Depending on the CLI version, configuration can look like the following. Use **one** form that your binary supports:
-
-```bash
-kudorad config set client chain-id kudora_12000-1 --home "$NODE_HOME"
+kudorad config set client chain-id "$CHAIN_ID" --home "$NODE_HOME"
 ```
 
 ---
 
-## 7) Validate the genesis
-
-Before starting, validate the `genesis.json` to catch formatting or checksum issues early.
+## 9) Validate the genesis
 
 ```bash
 kudorad genesis validate-genesis --home "$NODE_HOME"
 ```
 
-A successful validation prints no errors.
-
 ---
 
-## 8) Start the node
+## 10) Start the node
 
 ```bash
 kudorad start --home "$NODE_HOME"
 ```
-
-You should see your node starting, loading the genesis, and beginning to sync.
-
-> **Logs:** Keep this terminal open to watch logs. If you’re running in production, consider setting up a `systemd` service and a log rotation policy.
-
----
-
-## What you achieved
-
-- Built the `kudorad` binary.
-- Initialized a node home with your moniker and chain ID.
-- **EITHER** loaded the official mainnet `genesis.json` **OR** created a fresh chain from scratch.
-- Validated the genesis and started your node.
-
-You’re now running a Kudora node 🎉 From here, you can add seeds/peers, set pruning, or configure a service for production use.
-
----
-
-## Quick Reference (copy/paste)
-
-```bash
-# Pull sources
-git clone https://github.com/Kudora-Labs/kudora.git
-cd kudora
-make install
-
-# Verify binary
-which kudorad
-kudorad version
-
-# Node home
-export NODE_HOME=./path-to-the-node-dir
-mkdir -p "$NODE_HOME"
-
-# Init (mainnet chain-id shown; change if you make a private chain)
-kudorad init <Moniker> --chain-id kudora_12000-1 --home "$NODE_HOME"
-
-# ===== Optional: Create a chain from scratch (local devnet) =====
-# Wallet
-kudorad keys add <WalletName> --keyring-backend file --home "$NODE_HOME"
-
-# Allocate tokens in genesis
-kudorad genesis add-genesis-account <WalletName> <amount><denom> \
-  --keyring-backend file --home "$NODE_HOME"
-
-# Create validator gentx (self-delegate)
-kudorad genesis gentx <WalletName> <amount><denom> \
-  --chain-id kudora_12000-1 --keyring-backend file --home "$NODE_HOME"
-
-# Collect gentxs
-kudorad genesis collect-gentxs --home "$NODE_HOME"
-# =================================================================
-# NOTE: Use the same <denom> as your staking bond denom.
-
-# Mainnet genesis (skip if you created your own chain above)
-curl -L -o "$NODE_HOME/config/genesis.json" \
-  "https://raw.githubusercontent.com/Kudora-Labs/kud-network-mainnet/refs/heads/main/genesis.json"
-
-# Configure client (optional but handy)
-kudorad config set client chain-id kudora_12000-1 --home "$NODE_HOME"
-
-# Validate & start
-kudorad genesis validate-genesis --home "$NODE_HOME"
-kudorad start --home "$NODE_HOME"
