@@ -86,7 +86,7 @@ kudorad init "$MONIKER" --chain-id "$CHAIN_ID" --home "$NODE_HOME"
 Do not change these; they pin network artifacts for reproducible setup.
 
 ```bash
-export PINNED_COMMIT="c66fd3fc25d8a2a8cae8125141dd8843ee0bf847"
+export PINNED_COMMIT="2ad5d965fea0b7859c916583455e8365eaf3a3cc"
 export BASE="https://raw.githubusercontent.com/Kudora-Labs/kud-network-mainnet/$PINNED_COMMIT"
 export LISTS_URL="$BASE/networks/mainnet"
 export CFG="$NODE_HOME/config/config.toml"
@@ -264,6 +264,7 @@ kudorad query tendermint-validator-set --home "$NODE_HOME" --chain-id kudora_120
 ### 7.1 Set LocalNet parameters
 
 ```bash
+export WALLET_NAME="YOUR-WALLET"
 export DENOM="kud"
 export GENESIS_AMOUNT="13000000000000000000000000"
 export GENTX_AMOUNT="1000000000000000000"
