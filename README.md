@@ -265,8 +265,8 @@ kudorad query tendermint-validator-set --home "$NODE_HOME" --chain-id kudora_120
 
 ```bash
 export DENOM="kud"
-export GENESIS_AMOUNT="100000000"
-export GENTX_AMOUNT="50000000"
+export GENESIS_AMOUNT="13000000000000000000000000"
+export GENTX_AMOUNT="1000000000000000000"
 export KEYRING_BACKEND="file"
 ```
 
