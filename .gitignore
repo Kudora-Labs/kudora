@@ -2,7 +2,7 @@
 configs/logs.json
 dist/
 
-# Ignorer tout ce qui commence par node
+# Ignored folders that start with "node"
 node-1/
 node-2/
 node-3/
