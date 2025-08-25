@@ -49,7 +49,7 @@ kudorad version
 ## 3) Environment setup
 
 ```bash
-export NODE_HOME="$HOME/.kudorad"
+export NODE_HOME="$HOME/.kudora"
 export MONIKER="YOUR-MONIKER-NAME"
 ```
 
@@ -86,7 +86,7 @@ kudorad init "$MONIKER" --chain-id "$CHAIN_ID" --home "$NODE_HOME"
 Do not change these; they pin network artifacts for reproducible setup.
 
 ```bash
-export PINNED_COMMIT="2ad5d965fea0b7859c916583455e8365eaf3a3cc"
+export PINNED_COMMIT="a44ea19cbddf600fc8673b62acace42f32dd3ccf"
 export BASE="https://raw.githubusercontent.com/Kudora-Labs/kud-network-mainnet/$PINNED_COMMIT"
 export LISTS_URL="$BASE/networks/mainnet"
 export CFG="$NODE_HOME/config/config.toml"
