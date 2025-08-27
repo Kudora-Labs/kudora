@@ -16,7 +16,7 @@ You should receive a response within 48 hours. If for some reason you do not, pl
 
 Please include the following information in your security report:
 
-- Type of issue (e.g., buffer overflow, SQL injection, cross-site scripting, etc.)
+- Type of issue (e.g., Access Control Issues, Reentrancy, Front-Running, buffer overflow, cross-site scripting, etc.)
 - Full paths of source file(s) related to the manifestation of the issue
 - The location of the affected source code (tag/branch/commit or direct URL)
 - Any special configuration required to reproduce the issue
@@ -44,17 +44,16 @@ Please include the following information in your security report:
 This security policy applies to:
 
 - The main Kudora blockchain codebase
-- Custom modules in the `x/` directory
 - Application logic and configuration
 - Smart contract interactions (EVM compatibility layer)
 - IBC-related functionality
 - API endpoints and interfaces
+- Frontend (e.g. React)
 
 ### Out of Scope
 
 - Third-party dependencies (please report to the respective maintainers)
 - Issues in testnet or development environments that do not affect production
-- Issues requiring physical access to infrastructure
 - Social engineering attacks
 
 ## Security Best Practices for Contributors
@@ -121,7 +120,7 @@ Security advisories will be published in our GitHub Security Advisories section.
 
 For security-related inquiries:
 
-<!-- - **Email**: security@kudoralabs.com -->
+<!-- - **Email**: kudora-labs@kudora.org -->
 - **PGP Key**: [Available upon request]
 - **Response Time**: Within 48 hours
 
@@ -140,6 +139,6 @@ We thank the following security researchers for their responsible disclosure:
 
 ---
 
-**Last Updated**: January 2025
+**Last Updated**: August 2025
 
 Thank you for helping keep Kudora and our community safe!
