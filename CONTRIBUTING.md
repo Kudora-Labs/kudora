@@ -36,14 +36,8 @@ cd kudora
 git remote add upstream https://github.com/kudora-labs/kudora.git
 ```
 
-```bash
-# Don't forget to fetch and rebase frequently from kudora-labs/kudora main branch before create new feature and just before your PR
-git fetch upstream
-git rebase upstream/main
-git switch -c "feat(domaine): description"
-```
-
-_Even during the feature development, it is useful to rebase frequently_
+_Don't forget to keep sync with kudora-labs/kudora main branch before create new feature and just before your PR_
+_Even during the feature development, it is useful to sync frequently_
 
 
 ### Local Node Setup
@@ -85,7 +79,7 @@ source ~/.bashrc
 #### 3. Initialize Node with KUD Configuration
 
 ````bash
-kudorad init Node-1 --chain-id kudora_12000-1 --home ./node-1 --default-denom kud
+kudorad init Node-1 --chain-id kudora_12000-1 --home ./.kudora --default-denom kud
 ````
 
 _Creates a new blockchain node and configures KUD as the staking denomination_
@@ -93,7 +87,7 @@ _Creates a new blockchain node and configures KUD as the staking denomination_
 #### 4. Create Wallet
 
 ```bash
-kudorad keys add alice --keyring-backend file --home ./node-1
+kudorad keys add alice --keyring-backend file --home ./.kudora
 ````
 
 _Creates a new wallet/account named "alice" using file-based keyring storage_
@@ -101,17 +95,17 @@ _Creates a new wallet/account named "alice" using file-based keyring storage_
 #### 5. Setup Genesis Account
 
 ```bash
-kudorad genesis add-genesis-account alice 1800000000000000000000000000kud --home ./node-1 --keyring-backend file
+kudorad genesis add-genesis-account alice 1800000000000000000000000000kud --home ./.kudora --keyring-backend file
 ```
 
-\_Replace "alice" by her "address"
+_Replace "alice" by her "address"
 
 _Adds Alice's account to the genesis block with 1.8 billion KUD tokens initial balance_
 
 #### 6. Create Genesis Transaction
 
 ```bash
-kudorad genesis gentx alice 1000000000000000000kud --chain-id=kudora_12000-1 --keyring-backend file --home=./node-1
+kudorad genesis gentx alice 1000000000000000000kud --chain-id=kudora_12000-1 --keyring-backend file --home=./.kudora
 ```
 
 _Creates a genesis transaction where Alice stakes 1 billion KUD to become a founding validator_
@@ -119,7 +113,7 @@ _Creates a genesis transaction where Alice stakes 1 billion KUD to become a foun
 #### 7. Collect Genesis Transactions
 
 ```bash
-kudorad genesis collect-gentxs --home=./node-1
+kudorad genesis collect-gentxs --home=./.kudora
 ```
 
 _Collects all genesis transactions and incorporates them into the genesis block_
@@ -127,7 +121,7 @@ _Collects all genesis transactions and incorporates them into the genesis block_
 #### 8. Configure Client
 
 ```bash
-kudorad config set client chain-id kudora_12000-1 --home ./node-1
+kudorad config set client chain-id kudora_12000-1 --home ./.kudora
 ```
 
 _Sets the default chain ID for client commands_
@@ -135,14 +129,14 @@ _Sets the default chain ID for client commands_
 #### 9. Validate Genesis
 
 ```bash
-kudorad genesis validate-genesis --home=./node-1
+kudorad genesis validate-genesis --home=./.kudora
 ```
 
 _Validates that the genesis file is properly formatted and valid_
 
 #### 10. Enable APIs
 
-Edit `./node-1/config/app.toml` and set:
+Edit `./.kudora/config/app.toml` and set:
 
 ```toml
 [json-rpc]
@@ -157,7 +151,7 @@ _Enables JSON-RPC and API endpoints for interacting with the blockchain_
 #### 11. Start Node
 
 ```bash
-kudorad start --home ./node-1
+kudorad start --home ./.kudora
 ```
 
 _Starts the blockchain node and begins block production_
@@ -184,13 +178,7 @@ We welcome various types of contributions:
 3. **Fork the repository**: Create your own fork to work on
 4. **Create a branch**: Follow our branch naming convention
 
-```bash
-# Don't forget to fetch and rebase frequently from kudora-labs/kudora main branch before create new feature and just before your PR
-git fetch upstream
-git rebase upstream/main
-git switch -c "feat(domaine): description"
-```
-
+_Don't forget to keep sync with kudora-labs/kudora main branch before create new feature and just before your PR_
 _Even during the feature development, it is useful to rebase frequently_
 
 ## Branch Naming Convention
@@ -262,7 +250,7 @@ git checkout -b updates
 ```bash
 # Update your fork with latest changes
 git fetch upstream
-git checkout main
+git switch main
 git merge upstream/main
 
 # Create and switch to your feature branch
@@ -361,10 +349,6 @@ Follow conventional commit format:
 
 ```
 <type>(<scope>): <subject>
-
-<body>
-
-<footer>
 ```
 
 **Types:**
@@ -391,7 +375,6 @@ Closes #123
 ### Code Quality
 
 - **Linting**: Run `make lint` before submitting
-- **Formatting**: Run `make format` to format code
 - **Testing**: Ensure all tests pass with `make test`
 - **Documentation**: Update relevant documentation
 
