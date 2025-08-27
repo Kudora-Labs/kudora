@@ -14,8 +14,9 @@
 - Build tools: `make`, a C compiler (GCC or Clang), plus `git`, `curl`, `jq`
 - Network access to fetch the code and `genesis.json`
 
-### Linux (Ubuntu/Debian) — install dependencies and Go
+### Install dependencies and Go
 
+#### Linux (Ubuntu/Debian)
 For ARM64, replace `amd64` with `arm64` in the Go download URL.
 
 ```bash
@@ -28,6 +29,39 @@ rm -f go1.23.0.linux-amd64.tar.gz
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 echo 'export GOPATH=$HOME/go; export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
 source ~/.bashrc
+go version
+which go
+```
+
+#### MacOS
+
+```bash
+brew update
+brew install make gcc git curl jq
+brew install go
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc
+echo 'export GOPATH=$HOME/go; export PATH=$PATH:$GOPATH/bin' >> ~/.zshrc
+source ~/.zshrc
+go version
+which go
+```
+
+#### Windows
+
+```bash
+winget install --id Git.Git -e
+winget install --id GNU.Make -e
+winget install --id GCC.GCC -e
+winget install --id Curl.Curl -e
+winget install --id jqlang.jq -e
+winget install --id GoLang.Go -e
+---
+
+After, add to your Path :
+C:\Go\bin
+%USERPROFILE%\go\bin
+
+Finaly :
 go version
 which go
 ```
