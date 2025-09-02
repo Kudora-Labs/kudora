@@ -51,6 +51,7 @@ kudorad version
 ```bash
 export NODE_HOME="$HOME/.kudora"
 export MONIKER="YOUR-MONIKER-NAME"
+export TOKEN="kud"
 ```
 
 Choose **one** chain ID (Mainnet **or** LocalNet):
@@ -74,7 +75,7 @@ export CHAIN_ID="kudora-local-1"
 A moniker is your node’s public nickname.
 
 ```bash
-kudorad init "$MONIKER" --chain-id "$CHAIN_ID" --home "$NODE_HOME"
+kudorad init "$MONIKER" --chain-id "$CHAIN_ID" --home "$NODE_HOME" --default-denom "$TOKEN"
 ```
 
 ---
