@@ -1,5 +1,8 @@
 name: public cloud testnet
 
+permissions:
+  contents: read
+
 on:
   push:
     tags:
