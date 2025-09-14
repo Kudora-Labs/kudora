@@ -306,7 +306,36 @@ kudorad config set client chain-id "$CHAIN_ID" --home "$NODE_HOME"
 
 ---
 
-## 9) Validate the genesis
+## 9) Enable EVM JSON-RPC (Optional)
+
+Kudora is EVM-compatible and can serve Ethereum JSON-RPC requests on port 8545. This allows you to use MetaMask, Web3 tools, and deploy smart contracts.
+
+To enable the JSON-RPC endpoint:
+
+```bash
+# Enable JSON-RPC in app.toml configuration
+sed -i '' 's/enable = false/enable = true/g' "$NODE_HOME/config/app.toml"
+```
+
+Or manually edit `$NODE_HOME/config/app.toml` and change:
+
+```toml
+[json-rpc]
+enable = false
+```
+
+to:
+
+```toml
+[json-rpc]
+enable = true
+```
+
+After enabling, the EVM JSON-RPC will be available at `http://localhost:8545` when the node is running.
+
+---
+
+## 10) Validate the genesis
 
 ```bash
 kudorad genesis validate-genesis --home "$NODE_HOME"
@@ -314,7 +343,7 @@ kudorad genesis validate-genesis --home "$NODE_HOME"
 
 ---
 
-## 10) Start the node
+## 11) Start the node
 
 ```bash
 kudorad start --home "$NODE_HOME"
