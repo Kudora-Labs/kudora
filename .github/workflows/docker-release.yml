@@ -58,7 +58,7 @@ jobs:
 
       # make sure to update package to be public in repo ghcr settings
       - name: Build and push Docker image
-        uses: strangelove-ventures/heighliner-build-action@v1.0.0
+        uses: strangelove-ventures/heighliner-build-action@v1.0.3
         with:
           # v0.0.1
           git-ref: ${{ github.ref_name }}
