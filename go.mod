@@ -63,7 +63,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/strangelove-ventures/tokenfactory v0.50.3
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	google.golang.org/protobuf v1.36.4
 )
 
