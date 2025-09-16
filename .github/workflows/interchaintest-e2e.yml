@@ -26,7 +26,7 @@ jobs:
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5.0.0
 
       - name: Setup Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v4
@@ -93,7 +93,7 @@ jobs:
           cache-dependency-path: interchaintest/go.sum
 
       - name: checkout chain
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5.0.0
 
       # Cache go build cache, used to speedup go test
       - name: Go Build Cache
