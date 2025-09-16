@@ -46,7 +46,32 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 )
 
-const chainID = "testing"
+const chainID = "kudora_9000-1"
+
+// setupSDKConfigForTests configures the SDK with Kudora-specific settings for testing
+func setupSDKConfigForTests() {
+	config := sdk.GetConfig()
+	
+	// Use defer-recover to handle case where config is already sealed
+	defer func() {
+		if r := recover(); r != nil {
+			// Configuration is already sealed, which is fine for tests
+			return
+		}
+	}()
+	
+	// Set Kudora-specific bech32 prefixes
+	config.SetBech32PrefixForAccount(Bech32Prefix, Bech32Prefix+"pub")
+	config.SetBech32PrefixForValidator(Bech32Prefix+"valoper", Bech32Prefix+"valoperpub")
+	config.SetBech32PrefixForConsensusNode(Bech32Prefix+"valcons", Bech32Prefix+"valconspub")
+	
+	// Set coin type and purpose to match production
+	config.SetCoinType(CoinType)
+	config.SetPurpose(44) // Standard BIP-44 purpose
+	
+	// Seal the configuration to prevent further changes
+	config.Seal()
+}
 
 // SetupOptions defines arguments that are passed into `ChainApp` constructor.
 type SetupOptions struct {
@@ -63,6 +88,9 @@ func setup(
 	invCheckPeriod uint,
 	wasmOpts ...wasmkeeper.Option,
 ) (*ChainApp, GenesisState) {
+	// Set up SDK configuration for tests
+	setupSDKConfigForTests()
+	
 	db := dbm.NewMemDB()
 	nodeHome := t.TempDir()
 	snapshotDir := filepath.Join(nodeHome, "data", "snapshots")
@@ -96,6 +124,9 @@ func setup(
 // NewChainAppWithCustomOptions initializes a new ChainApp with custom options.
 func NewChainAppWithCustomOptions(t *testing.T, isCheckTx bool, options SetupOptions) *ChainApp {
 	t.Helper()
+
+	// Setup SDK configuration first
+	setupSDKConfigForTests()
 
 	privVal := mock.NewPV()
 	pubKey, err := privVal.GetPubKey()
@@ -148,6 +179,9 @@ func Setup(
 	wasmOpts ...wasmkeeper.Option,
 ) *ChainApp {
 	t.Helper()
+	
+	// Setup SDK config for tests
+	setupSDKConfigForTests()
 
 	privVal := mock.NewPV()
 	pubKey, err := privVal.GetPubKey()
