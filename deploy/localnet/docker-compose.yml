@@ -1,0 +1,48 @@
+services:
+  kudora-validator-0:
+    image: ${KUDORA_DOCKER_IMAGE:-kudora/kudorad:localnet}
+    container_name: kudora-validator-0
+    user: "${LOCALNET_RUNTIME_UID:-65532}:${LOCALNET_RUNTIME_GID:-65532}"
+    working_dir: /home/nonroot
+    environment:
+      HOME: /home/nonroot
+    command:
+      - start
+      - --home
+      - /home/nonroot/.kudora
+      - --minimum-gas-prices
+      - 0akud
+      - --api.enable=true
+      - --api.enabled-unsafe-cors=true
+      - --grpc.enable=true
+      - --grpc.address
+      - 0.0.0.0:9090
+      - --grpc-web.enable=false
+      - --json-rpc.enable
+      - --json-rpc.address
+      - 0.0.0.0:8545
+      - --json-rpc.ws-address
+      - 0.0.0.0:8546
+      - --rpc.laddr
+      - tcp://0.0.0.0:26657
+      - --evm.evm-chain-id
+      - "120001"
+    ports:
+      - "26656:26656"
+      - "26657:26657"
+      - "26660:26660"
+      - "1317:1317"
+      - "9090:9090"
+      - "8545:8545"
+      - "8546:8546"
+    volumes:
+      - ../../.localnet/validator0:/home/nonroot/.kudora
+    networks:
+      kudora-localnet:
+        aliases:
+          - kudora-validator-0
+    restart: unless-stopped
+
+networks:
+  kudora-localnet:
+    name: ${LOCALNET_DOCKER_NETWORK:-kudora-localnet}

@@ -1,0 +1,15 @@
+# This file mirrors the standard Ignite OpenAPI generation template.
+version: v2
+plugins:
+  - local:
+      [
+        "go",
+        "tool",
+        "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2",
+      ]
+    out: .
+    opt:
+      - logtostderr=true
+      - openapi_naming_strategy=fqn
+      - json_names_for_fields=false
+      - generate_unbound_methods=false

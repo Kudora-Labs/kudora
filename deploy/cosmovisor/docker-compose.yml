@@ -1,0 +1,50 @@
+services:
+  kudora-cosmovisor:
+    image: ${KUDORA_COSMOVISOR_IMAGE:-kudora/kudorad-cosmovisor:v0.1.0-rc.1}
+    container_name: kudora-cosmovisor
+    working_dir: /home/nonroot
+    environment:
+      HOME: /home/nonroot
+      DAEMON_NAME: kudorad
+      DAEMON_HOME: /home/nonroot/.kudora
+      DAEMON_RESTART_AFTER_UPGRADE: "true"
+      DAEMON_ALLOW_DOWNLOAD_BINARIES: "false"
+      UNSAFE_SKIP_BACKUP: "false"
+    command:
+      - --home
+      - /home/nonroot/.kudora
+      - --minimum-gas-prices
+      - 0akud
+      - --api.enable=true
+      - --api.enabled-unsafe-cors=true
+      - --grpc.enable=true
+      - --grpc.address
+      - 0.0.0.0:9090
+      - --grpc-web.enable=false
+      - --json-rpc.enable
+      - --json-rpc.address
+      - 0.0.0.0:8545
+      - --json-rpc.ws-address
+      - 0.0.0.0:8546
+      - --rpc.laddr
+      - tcp://0.0.0.0:26657
+      - --evm.evm-chain-id
+      - "120001"
+    ports:
+      - "37656:26656"
+      - "37657:26657"
+      - "11317:1317"
+      - "39090:9090"
+      - "9545:8545"
+      - "9546:8546"
+    volumes:
+      - ${COSMOVISOR_HOME_HOST:-../../tmp/phase-17-cosmovisor/home}:/home/nonroot/.kudora
+    restart: unless-stopped
+    networks:
+      kudora-cosmovisor:
+        aliases:
+          - kudora-cosmovisor
+
+networks:
+  kudora-cosmovisor:
+    name: ${COSMOVISOR_NETWORK:-kudora-cosmovisor}

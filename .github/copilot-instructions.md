@@ -8,7 +8,7 @@ Kudora is a **Cosmos SDK blockchain with EVM compatibility**. It combines the Co
 
 ### Chain Configuration
 
-- **Base Denom**: `kud` (18 decimals, matches Ethereum wei)
+- **Base Denom**: `akud` (18 decimals, matches Ethereum wei)
 - **Display Denom**: `kudos`
 - **Bech32 Prefix**: `kudo` (accounts: `kudo1...`, validators: `kudovaloper1...`)
 - **Chain ID**: `kudora_12000-1` (mainnet) or `kudora-local-1` (localnet)

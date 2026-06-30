@@ -1,0 +1,21 @@
+# Reference localnet overrides applied by deploy/localnet/scripts/init-localnet.sh
+# and reinforced by deploy/localnet/docker-compose.yml at runtime.
+
+minimum-gas-prices = "0akud"
+
+[api]
+enable = true
+address = "tcp://0.0.0.0:1317"
+enabled-unsafe-cors = true
+
+[grpc]
+enable = true
+address = "0.0.0.0:9090"
+
+[evm]
+evm-chain-id = 120001
+
+[json-rpc]
+enable = true
+address = "0.0.0.0:8545"
+ws-address = "0.0.0.0:8546"

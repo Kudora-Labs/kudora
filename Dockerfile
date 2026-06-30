@@ -1,49 +1,85 @@
-FROM golang:1.23.6-alpine3.20 AS build-env
+# syntax=docker/dockerfile:1.7
 
-SHELL ["/bin/sh", "-ecuxo", "pipefail"]
+ARG GO_VERSION=1.26.4
+ARG APP_VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_TAGS=localnet,docker
+ARG IMAGE_CREATED=unknown
+ARG RELEASE_TRACK=localnet
+ARG MAINNET_LAUNCH_READY=false
+FROM golang:${GO_VERSION}-bookworm AS builder
 
-RUN set -eux; apk add --no-cache \
-    ca-certificates \
-    build-base \
-    git \
-    linux-headers \
-    bash \
-    binutils-gold
+WORKDIR /src
 
-WORKDIR /code
+ENV CGO_ENABLED=1
+ENV GOFLAGS=-buildvcs=false
 
-ADD go.mod go.sum ./
-RUN set -eux; \
-    export ARCH=$(uname -m); \
-    WASM_VERSION=$(go list -m all | grep github.com/CosmWasm/wasmvm || true); \
-    if [ ! -z "${WASM_VERSION}" ]; then \
-      WASMVM_REPO=$(echo $WASM_VERSION | awk '{print $1}');\
-      WASMVM_VERS=$(echo $WASM_VERSION | awk '{print $2}');\
-      wget -O /lib/libwasmvm_muslc.a https://${WASMVM_REPO}/releases/download/${WASMVM_VERS}/libwasmvm_muslc.$(uname -m).a;\
-    fi; \
-    go mod download;
+ARG APP_VERSION
+ARG GIT_COMMIT
+ARG BUILD_TAGS
 
-# Copy over code
-COPY . /code
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
-# force it to use static lib (from above) not standard libgo_cosmwasm.so file
-# then log output of file /code/bin/kudorad
-# then ensure static linking
-RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build \
-  && file /code/build/kudorad \
-  && echo "Ensuring binary is statically linked ..." \
-  && (file /code/build/kudorad | grep "statically linked")
+COPY . .
 
-# --------------------------------------------------------
-FROM alpine:3.21
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -trimpath \
+      -ldflags="-s -w \
+        -X github.com/cosmos/cosmos-sdk/version.Name=kudora \
+        -X github.com/cosmos/cosmos-sdk/version.AppName=kudorad \
+        -X github.com/cosmos/cosmos-sdk/version.Version=${APP_VERSION} \
+        -X github.com/cosmos/cosmos-sdk/version.Commit=${GIT_COMMIT} \
+        -X github.com/cosmos/cosmos-sdk/version.BuildTags=${BUILD_TAGS}" \
+      -o /out/kudorad ./cmd/kudorad
 
-COPY --from=build-env /code/build/kudorad /usr/bin/kudorad
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -trimpath -ldflags="-s -w" -o /out/kudora-evm-smoke-helper ./testutil/evm-smoke
 
-RUN apk add --no-cache ca-certificates curl make bash jq sed
+RUN --mount=type=cache,target=/go/pkg/mod \
+    set -eu; \
+    mod_cache="$(go env GOMODCACHE)"; \
+    wasmvm_lib_aarch64="$(find "${mod_cache}" -path '*/github.com/!cosm!wasm/wasmvm/v3@*/internal/api/libwasmvm.aarch64.so' | head -n 1)"; \
+    wasmvm_lib_x86_64="$(find "${mod_cache}" -path '*/github.com/!cosm!wasm/wasmvm/v3@*/internal/api/libwasmvm.x86_64.so' | head -n 1)"; \
+    test -n "${wasmvm_lib_aarch64}"; \
+    test -n "${wasmvm_lib_x86_64}"; \
+    cp "${wasmvm_lib_aarch64}" /out/libwasmvm.aarch64.so; \
+    cp "${wasmvm_lib_x86_64}" /out/libwasmvm.x86_64.so
 
-WORKDIR /opt
+FROM scratch AS release-binary
 
-# rest server, tendermint p2p, tendermint rpc
-EXPOSE 1317 26656 26657 8545 8546
+COPY --from=builder /out/ /out/
 
-CMD ["/usr/bin/kudorad", "version"]
+FROM gcr.io/distroless/cc-debian12:nonroot
+
+ARG APP_VERSION
+ARG GIT_COMMIT
+ARG IMAGE_CREATED
+ARG RELEASE_TRACK
+ARG MAINNET_LAUNCH_READY
+
+WORKDIR /home/nonroot
+
+LABEL org.opencontainers.image.title="kudorad" \
+      org.opencontainers.image.description="Kudora candidate runtime image" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.created="${IMAGE_CREATED}" \
+      org.opencontainers.image.source="https://github.com/Kudora-Labs/kudora" \
+      io.kudora.release_track="${RELEASE_TRACK}" \
+      io.kudora.mainnet_launch_ready="${MAINNET_LAUNCH_READY}"
+
+COPY --from=builder /out/kudorad /usr/local/bin/kudorad
+COPY --from=builder /out/kudora-evm-smoke-helper /usr/local/bin/kudora-evm-smoke-helper
+COPY --from=builder /out/libwasmvm.aarch64.so /usr/lib/libwasmvm.aarch64.so
+COPY --from=builder /out/libwasmvm.x86_64.so /usr/lib/libwasmvm.x86_64.so
+
+EXPOSE 26656 26657 1317 9090 8545 8546
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/usr/local/bin/kudorad"]
+CMD ["version", "--long"]

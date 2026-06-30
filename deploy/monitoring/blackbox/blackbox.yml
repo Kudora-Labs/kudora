@@ -1,0 +1,21 @@
+modules:
+  http_get_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      preferred_ip_protocol: ip4
+
+  kudora_eth_chainid:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      preferred_ip_protocol: ip4
+      headers:
+        Content-Type: application/json
+      body: '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}'
+      valid_status_codes:
+        - 200
+      fail_if_body_not_matches_regexp:
+        - '"result":"0x1d4c1"'

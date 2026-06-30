@@ -1,350 +1,197 @@
-# Kudora — Quickstart Guide
+# Kudora
 
-> This guide offers two paths:
->
-> - **Join the Kudora Mainnet.** Build `kudorad`, load the official `genesis.json`, and start syncing.
-> - **Launch a Local Devnet (LocalNet).** Spin up a private, single-validator network on your machine/LAN using the same Kudora binary—ideal for testing.
+Kudora is being rebuilt from a clean official Ignite/Cosmos baseline. Phase 0 reset the repository, Phase 0.1 hardened the baseline, Phase 1 added the first Docker and CI layer, Phase 2 selected the official Cosmos EVM path, Phase 2.1 approved the narrow upstream `go-ethereum` dependency exception, Phase 3 integrated the minimal upstream-aligned Cosmos EVM runtime, Phase 3.2 closed the Cosmos EVM precompile reachability blocker, Phase 4 validated EVM transactions and contracts, Phase 5 added a minimal official CosmWasm runtime, Phase 5.1 closed the validation-integrity gap for the CosmWasm baseline, Phase 12 added the first business module `x/integrity`, Phase 12.1-lite added two-step tenant ownership transfer for that module, Phase 13 added a complete contributor-focused Docker localnet for the current Cosmos + EVM + CosmWasm runtime, Phase 13.1 hardened that localnet for Docker-first portability, Phase 14 added local-only Docker explorers for the same validated runtime, Phase 15 added a local-only Docker monitoring stack, Phase 16 / 16.1 prepare and validate the reproducible mainnet genesis pipeline in explicit candidate/template mode, and Phase 17 adds a candidate/devnet release pipeline plus a local Cosmovisor runtime.
 
----
+Kudora's official Cosmos chain-id is `kudora_12000-1`. Earlier planning references to `kudora_12000-2` are superseded.
 
-## 1) Prerequisites
+The current repository state preserves these chain parameters:
 
-- Recent Linux distribution or macOS
-- **Go 1.23** (required)
-- Build tools: `make`, a C compiler (GCC or Clang), plus `git`, `curl`, `jq`
-- Network access to fetch the code and `genesis.json`
+- Binary name: `kudorad`
+- App name: `kudora`
+- Home directory: `.kudora`
+- Address prefix: `kudo`
+- Coin type: `60`
+- Base denom: `akud`
+- Display denom: `KUD`
+- Token decimals: `18`
+- Phase 3 EVM chain ID candidate in use for runtime validation: `120001`
+- Expected JSON-RPC `eth_chainId`: `0x1d4c1`
 
-### Linux (Ubuntu/Debian) — install dependencies and Go
+## Current Runtime Scope
 
-For ARM64, replace `amd64` with `arm64` in the Go download URL.
+The current repository baseline includes:
 
-```bash
-sudo apt update
-sudo apt install -y build-essential make gcc git curl jq
-curl -fsSLO https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
-sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
-rm -f go1.23.0.linux-amd64.tar.gz
-echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-echo 'export GOPATH=$HOME/go; export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
-source ~/.bashrc
-go version
-which go
-```
+- upstream `github.com/cosmos/evm v0.7.0`
+- the approved replacement `github.com/ethereum/go-ethereum => github.com/cosmos/go-ethereum v1.17.2-cosmos-0`
+- minimal EVM runtime wiring for:
+  - `x/vm`
+  - `x/feemarket`
+  - `x/erc20`
+- upstream `github.com/CosmWasm/wasmd v0.70.3`
+- upstream `github.com/CosmWasm/wasmvm/v3 v3.0.7`
+- minimal CosmWasm runtime wiring for:
+  - `x/wasm`
+- the first Kudora business module:
+  - `x/integrity`
+- conservative default Wasm permissions:
+  - code upload: `Nobody`
+  - instantiate default permission: `Nobody`
 
----
+`x/integrity` is a generic encrypted data integrity layer. It supports tenant registration, two-step tenant ownership transfer, immutable encrypted set commitments, full-set queries, and single-record-by-tag queries. The module recalculates a deterministic Merkle root on-chain but never decrypts ciphertext and never stores plaintext business fields.
 
-## 2) Pull the code & build
+JSON-RPC remains disabled by default in config. The local validation flow enables it explicitly during smoke tests.
 
-```bash
-git clone https://github.com/Kudora-Labs/kudora.git
-cd kudora
-make install
-which kudorad
-kudorad version
-```
+Kudora does not patch Cosmos EVM or CosmWasm locally. The narrow Phase 3.2 waiver for `GO-2025-3684` remains valid only while Kudora keeps all stateful Cosmos precompiles and default ERC20 precompile surfaces inactive.
 
----
+The repository now includes local-only smoke tests for:
 
-## 3) Environment setup
+- EVM account funding
+- `eth_getBalance`
+- `eth_getTransactionCount`
+- `eth_sendRawTransaction`
+- `eth_getTransactionReceipt`
+- EVM nonce progression
+- EVM gas accounting
+- minimal contract deployment
+- `eth_call` readback
+- contract state update verification
+- CosmWasm store / instantiate / execute / query validation
 
-```bash
-export NODE_HOME="$HOME/.kudora"
-export MONIKER="YOUR-MONIKER-NAME"
-export TOKEN="kud"
-```
+These tests run either against temporary single-node homes under `tmp/` or against the Docker localnet under `.localnet/`, and they do not claim mainnet readiness. The default localnet init path is now Docker-first, while host-assisted init remains an explicit debugging mode only.
 
-Choose **one** chain ID (Mainnet **or** LocalNet):
+## Mainnet Genesis Preparation
 
-**Mainnet:**
+Phase 16 / 16.1 add a deterministic mainnet-genesis preparation pipeline for the current Kudora baseline:
 
-```bash
-export CHAIN_ID="kudora_12000-1"
-```
+- chain-id `kudora_12000-1`
+- base denom `akud`
+- display denom `KUD`
+- decimals `18`
+- EVM chain ID `120001`
+- expected `eth_chainId` `0x1d4c1`
+- total supply `65100000000000000000000000akud` = `65,100,000 KUD`
+- allocation 1 `1310000000000000000000000akud` = `1,310,000 KUD`
+- allocation 2 `5200000000000000000000000akud` = `5,200,000 KUD`
+- community pool `58590000000000000000000000akud` = `58,590,000 KUD`
 
-**LocalNet:**
+The repository now carries a committed `config/mainnet/allocations.json` candidate file with two generated public `kudo...` addresses, explicit `genesis_time = 2026-08-01T12:00:00Z`, and `candidate_only: true`. This allows full structural validation while still marking the result as template-only and not final launch-ready mainnet.
 
-```bash
-export CHAIN_ID="kudora-local-1"
-```
+Standard Cosmos SDK governance remains stake-based. Validators vote with their own bonded stake and delegated stake unless delegators vote directly, and delegators may override validator votes depending on standard governance behavior. Phase 16 does not introduce validator-only governance.
 
----
+## Intentionally Not Included Yet
 
-## 4) Initialize the node
+This repository still intentionally excludes:
 
-A moniker is your node’s public nickname.
+- any business module other than `x/integrity`
+- production IBC app wiring and relayer flows
+- tokenfactory
+- packet-forward
+- rate-limit
+- ICA
+- 08-wasm
+- production explorer deployment and public explorer hardening; Phase 14 adds localnet-only explorers
+- production mainnet genesis and operational rollout assets
 
-```bash
-kudorad init "$MONIKER" --chain-id "$CHAIN_ID" --home "$NODE_HOME" --default-denom "$TOKEN"
-```
+No production secrets, validator keys, node keys, mnemonics, private keys, `.env` files, or credentials are included in this repository.
 
----
+## Candidate Release Scope
 
-## 5) Join the Kudora Mainnet
+Phase 17 defines the first candidate release as:
 
-### 5.1 Set mainnet sources (pinned)
+- release version `v0.1.0-rc.1`
+- release track `candidate`
+- release type `devnet_candidate`
+- mainnet launch-ready `false`
 
-Do not change these; they pin network artifacts for reproducible setup.
+This candidate release is intentionally not a final mainnet release. The
+candidate genesis remains structurally valid, but the committed allocation
+addresses are temporary candidate public addresses and real validator gentx
+files are still required before launch readiness can become true.
 
-```bash
-export PINNED_COMMIT="a44ea19cbddf600fc8673b62acace42f32dd3ccf"
-export BASE="https://raw.githubusercontent.com/Kudora-Labs/kud-network-mainnet/$PINNED_COMMIT"
-export LISTS_URL="$BASE/networks/mainnet"
-export CFG="$NODE_HOME/config/config.toml"
-```
-
-### 5.2 Get the mainnet genesis
-
-**Option 1 — Pinned from GitHub (recommended):**
-
-```bash
-curl -fsSL "$BASE/genesis.json" -o "$NODE_HOME/config/genesis.json"
-```
-
-**Option 2 — From a live RPC you trust:**
-
-```bash
-export RPC="https://rpc.example.net:26657"
-curl -fsSL "$RPC/genesis" | jq '.result.genesis // .genesis' > "$NODE_HOME/config/genesis.json"
-```
-
-### 5.3 Configure P2P
-
-Bind the P2P listener and choose **one** profile below (Full Node **or** Validator):
+## Validation Commands
 
 ```bash
-sed -i -E 's|^laddr = ".*"|laddr = "tcp://0.0.0.0:26656"|' "$CFG"
+make build
+make test
+make lint
+make verify-no-forks
+make verify-clean-reset
+make verify-no-secrets
+make dependency-audit
+make audit-evm-precompile-surface
+make assert-evm-precompile-policy
+make vulncheck
+make docker-build
+make docker-smoke-test
+make localnet-init
+make localnet-up
+make localnet-smoke-test
+make integrity-smoke-test
+make monitoring-up
+make monitoring-smoke-test
+make monitoring-down
+make monitoring-reset
+make mainnet-genesis-build
+make mainnet-genesis-validate
+make mainnet-genesis-inspect-supply
+make mainnet-genesis-inspect-policy
+make phase-16-validate
+make release-build-binaries
+make release-package
+make release-verify
+make release-docker-build
+make release-docker-verify
+make cosmovisor-image-build
+make cosmovisor-layout-verify
+make cosmovisor-smoke-test
+make phase-17-validate
+make explorers-up
+make explorers-smoke-test
+make explorers-down
+make explorers-reset
+make localnet-down
+make localnet-reset
+make phase-13.1-validate
+make phase-14-validate
+make phase-12-validate
+make phase-12.1-lite-validate
+make phase-15-validate
+make evm-smoke-test
+make evm-transaction-smoke-test
+make evm-contract-smoke-test
+make wasm-smoke-test
+make phase-3-validate
+make phase-3.2-validate
+make phase-4-validate
+make phase-5-validate
+make phase-5.1-validate
+make phase-13-validate
+make zip
 ```
 
-**Full Node profile:**
-
-```bash
-MAX_SEEDS=3
-MAX_PEERS=5
-SEEDS=$(curl -fsSL "$LISTS_URL/seeds.txt"  | grep -vE '^\s*(#|$)' | shuf -n "$MAX_SEEDS" | paste -sd,)
-PEERS=$(curl -fsSL "$LISTS_URL/peers.txt" | grep -vE '^\s*(#|$)' | shuf -n "$MAX_PEERS" | paste -sd,)
-sed -i -E "s|^seeds = \".*\"|seeds = \"$SEEDS\"|" "$CFG"
-sed -i -E "s|^persistent_peers = \".*\"|persistent_peers = \"$PEERS\"|" "$CFG"
-sed -i -E 's|^pex = .*|pex = true|' "$CFG"
-```
-
-**Validator profile:**
-
-```bash
-SENTRY_PEERS="NODEID_A@SENTRY_A:26656,NODEID_B@SENTRY_B:26656"
-SENTRY_IDS=$(printf "%s" "$SENTRY_PEERS" | tr ',' '\n' | cut -d@ -f1 | paste -sd,)
-sed -i -E 's|^seeds = ".*"|seeds = ""|' "$CFG"
-sed -i -E "s|^persistent_peers = \".*\"|persistent_peers = \"$SENTRY_PEERS\"|" "$CFG"
-sed -i -E "s|^unconditional_peer_ids = \".*\"|unconditional_peer_ids = \"$SENTRY_IDS\"|" "$CFG"
-sed -i -E 's|^pex = .*|pex = false|' "$CFG"
-```
-
----
-
-## 6) If You Choose Validator Profile Only
-
-Set a wallet name once and reuse it everywhere.
-
-```bash
-export WALLET_NAME="YOUR-WALLET"
-```
-
-### 6.1 Put the wallet into the node’s keyring (choose one)
-
-```bash
-kudorad keys add "$WALLET_NAME" --keyring-backend file --home "$NODE_HOME"
-```
-
-```bash
-kudorad keys add "$WALLET_NAME" --recover --keyring-backend file --home "$NODE_HOME"
-```
-
-```bash
-kudorad keys import "$WALLET_NAME" ~/wallets/"$WALLET_NAME".txt --keyring-backend file --home "$NODE_HOME"
-```
-
-> Security tip: store the mnemonic offline and never share it.
-> Fund **`$WALLET_NAME`** with enough tokens for **self-delegation** and **fees** before broadcasting.
-
-### 6.2 Prepare & broadcast `create-validator`
-
-`SELF_AMOUNT_KUD`: The self-delegation you bond now, written as an integer in base `kud`.
-
-`MIN_SELF_KUD`: the minimum self-delegation your validator must always keep, as an integer in base kud; it cannot be lowered later, and if your self-delegation ever falls below this threshold the validator is jailed until you self-delegate back to at least `MIN_SELF_KUD` and then unjail; choose this value carefully because raising it later tightens your safety margin and you can’t roll it back. Written as an integer in base `kud`.
-
-`IDENTITY / WEBSITE / SECURITY / DETAILS`: Optional public metadata displayed by explorers for your validator.
-
-`COMMISSION_RATE`: the starting commission fraction you take from delegators’ rewards (e.g. `0.05` = 5%); it can change later but must stay ≤ `COMMISSION_MAX_RATE` and move by at most `COMMISSION_MAX_CHANGE_RATE` per 24h.
-
-`COMMISSION_MAX_RATE`: the hard ceiling your commission can ever reach (e.g. `0.10` = 10%); it’s fixed at creation and cannot be raised later.
-
-`COMMISSION_MAX_CHANGE_RATE`: the maximum amount you can change `COMMISSION_RATE` within a 24h window (e.g. `0.01` = up to ±1% per day); it’s set at creation and cannot be changed later.
-
-`CONS_PUBKEY_B64`: The consensus ed25519 public key in base64, read automatically from your node home.
-
-```bash
-export SELF_AMOUNT_KUD="1000000000000000000"
-export MIN_SELF_KUD="1000000000000000000"
-
-export IDENTITY=""
-export WEBSITE=""
-export SECURITY=""
-export DETAILS=""
-
-export COMMISSION_RATE="0.05"
-export COMMISSION_MAX_RATE="0.10"
-export COMMISSION_MAX_CHANGE_RATE="0.01"
-
-export CONS_PUBKEY_B64=$(
-  kudorad tendermint show-validator --home "$NODE_HOME" 2>/dev/null \
-  | jq -r '.key // .pub_key.key // .pubkey.key // .PubKey.value // .value'
-)
-
-cat > create-validator.json <<EOF
-{
-  "amount": "${SELF_AMOUNT_KUD}kud",
-  "commission-max-change-rate": "${COMMISSION_MAX_CHANGE_RATE}",
-  "commission-max-rate": "${COMMISSION_MAX_RATE}",
-  "commission-rate": "${COMMISSION_RATE}",
-  "details": "${DETAILS}",
-  "identity": "${IDENTITY}",
-  "min-self-delegation": "${MIN_SELF_KUD}",
-  "moniker": "${MONIKER}",
-  "pubkey": {
-    "@type": "/cosmos.crypto.ed25519.PubKey",
-    "key": "${CONS_PUBKEY_B64}"
-  },
-  "security": "${SECURITY}",
-  "website": "${WEBSITE}"
-}
-EOF
-
-export FEE_POLICY_URL="$BASE/networks/mainnet/fees/fee_policy.json"
-export GAS_PRICE=$(curl -fsSL "$FEE_POLICY_URL" | jq -r '.recommended_min_gas_price.low')
-
-kudorad tx staking create-validator ./create-validator.json \
-  --from "$WALLET_NAME" \
-  --keyring-backend file \
-  --home "$NODE_HOME" \
-  --chain-id "$CHAIN_ID" \
-  --gas auto \
-  --gas-adjustment 1.1 \
-  --gas-prices "$GAS_PRICE"
-
-rm -f ./create-validator.json
-```
-
-### 6.3 Verify validator status
-
-By operator address:
-
-```bash
-VALOPER=$(kudorad keys show "$WALLET_NAME" --bech val -a --keyring-backend file --home "$NODE_HOME")
-kudorad query staking validator "$VALOPER"
-```
-
-Check if you’re in the active Tendermint set right now:
-
-```bash
-CONS_ADDR=$(kudorad tendermint show-address --home "$NODE_HOME" 2>/dev/null || kudorad comet show-address --home "$NODE_HOME")
-kudorad query tendermint-validator-set --home "$NODE_HOME" --chain-id kudora_12000-1 \
-| jq -r '.validators[].address' | grep -q "$CONS_ADDR" \
-&& echo "✅ In active set" || echo "⏳ Not in active set yet"
-```
-
----
-
-## 7) Launch a Local Devnet (LocalNet)
-
-**Read first:** All amounts below are **in base units `kud` (integers)**.
-
-- `GENESIS_AMOUNT`: Total tokens allocated to your wallet in genesis.
-- `GENTX_AMOUNT`: Portion of those tokens self-delegated in your validator gentx (must be ≤ `GENESIS_AMOUNT`).
-- `DENOM`: Base denom (here `kud`).
-
-### 7.1 Set LocalNet parameters
-
-```bash
-export WALLET_NAME="YOUR-WALLET"
-export DENOM="kud"
-export GENESIS_AMOUNT="13000000000000000000000000"
-export GENTX_AMOUNT="1000000000000000000"
-export KEYRING_BACKEND="file"
-```
-
-### 7.2 Create the wallet for LocalNet
-
-```bash
-kudorad keys add "$WALLET_NAME" --keyring-backend "$KEYRING_BACKEND" --home "$NODE_HOME"
-```
-
-### 7.3 Allocate tokens in genesis
-
-```bash
-kudorad genesis add-genesis-account "$WALLET_NAME" "${GENESIS_AMOUNT}${DENOM}" --keyring-backend "$KEYRING_BACKEND" --home "$NODE_HOME"
-```
-
-### 7.4 Create a validator gentx (self-delegate)
-
-```bash
-kudorad genesis gentx "$WALLET_NAME" "${GENTX_AMOUNT}${DENOM}" --chain-id "$CHAIN_ID" --keyring-backend "$KEYRING_BACKEND" --home "$NODE_HOME"
-```
-
-### 7.5 Collect gentxs into genesis
-
-```bash
-kudorad genesis collect-gentxs --home "$NODE_HOME"
-```
-
----
-
-## 8) Configure the client
-
-```bash
-kudorad config set client chain-id "$CHAIN_ID" --home "$NODE_HOME"
-```
-
----
-
-## 9) Enable EVM JSON-RPC (Optional)
-
-Kudora is EVM-compatible and can serve Ethereum JSON-RPC requests on port 8545. This allows you to use MetaMask, Web3 tools, and deploy smart contracts.
-
-To enable the JSON-RPC endpoint:
-
-```bash
-# Enable JSON-RPC in app.toml configuration
-sed -i '' 's/enable = false/enable = true/g' "$NODE_HOME/config/app.toml"
-```
-
-Or manually edit `$NODE_HOME/config/app.toml` and change:
-
-```toml
-[json-rpc]
-enable = false
-```
-
-to:
-
-```toml
-[json-rpc]
-enable = true
-```
-
-After enabling, the EVM JSON-RPC will be available at `http://localhost:8545` when the node is running.
-
----
-
-## 10) Validate the genesis
-
-```bash
-kudorad genesis validate-genesis --home "$NODE_HOME"
-```
-
----
-
-## 11) Start the node
-
-```bash
-kudorad start --home "$NODE_HOME"
-```
+## Reference Documents
+
+- `docs/phase-0-reset.md`
+- `docs/docker/phase-1-docker.md`
+- `docs/docker/phase-13-localnet.md`
+- `docs/docker/phase-13.1-localnet-portability.md`
+- `docs/docker/phase-14-explorers.md`
+- `docs/docker/phase-15-monitoring.md`
+- `docs/mainnet/phase-16-genesis.md`
+- `docs/release/phase-17-candidate-release-cosmovisor.md`
+- `docs/modules/phase-12-integrity.md`
+- `docs/modules/phase-12.1-lite-integrity-ownership-transfer.md`
+- `docs/evm/phase-2-official-evm-path.md`
+- `docs/evm/phase-2-evm-compatibility-matrix.md`
+- `docs/evm/phase-2-evm-integration-design.md`
+- `docs/evm/phase-2.1-evm-dependency-policy.md`
+- `docs/evm/phase-3-evm-runtime.md`
+- `docs/evm/phase-4-evm-functional-validation.md`
+- `docs/wasm/phase-5-cosmwasm-compatibility.md`
+- `docs/wasm/phase-5-cosmwasm-runtime.md`
+- `docs/security/phase-3.1-vulnerability-audit.md`
+- `docs/security/phase-3.2-precompile-reachability-audit.md`
+- `docs/security/phase-5-cosmwasm-vulnerability-audit.md`
+- `docs/release/dependency-baseline.md`
+
+Kudora now has minimal EVM and CosmWasm runtime support, the generic `x/integrity` business module MVP with transferable tenant ownership, local functional validation, a Docker localnet, local-only explorers, local-only monitoring, a mainnet-genesis preparation pipeline, and a candidate/devnet release plus Cosmovisor packaging layer. This is still not a mainnet-readiness claim: Phase 16 / 16.1 distinguish a structurally valid genesis template from a launch-ready mainnet artifact, and Phase 17 keeps `mainnet_launch_ready=false` while the repository still uses candidate allocation wallets and no real validator gentx set.

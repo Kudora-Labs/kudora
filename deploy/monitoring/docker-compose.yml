@@ -1,0 +1,61 @@
+services:
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.12.0}
+    container_name: kudora-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "19090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      kudora-localnet:
+        aliases:
+          - prometheus
+    restart: unless-stopped
+
+  blackbox-exporter:
+    image: ${BLACKBOX_EXPORTER_IMAGE:-quay.io/prometheus/blackbox-exporter:v0.28.0}
+    container_name: kudora-blackbox-exporter
+    command:
+      - --config.file=/etc/blackbox_exporter/blackbox.yml
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/blackbox.yml:ro
+    networks:
+      kudora-localnet:
+        aliases:
+          - blackbox-exporter
+    restart: unless-stopped
+
+  grafana:
+    image: ${GRAFANA_IMAGE:-grafana/grafana:13.0.2}
+    container_name: kudora-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      kudora-localnet:
+        aliases:
+          - grafana
+    restart: unless-stopped
+
+networks:
+  kudora-localnet:
+    external: true
+    name: ${LOCALNET_DOCKER_NETWORK:-kudora-localnet}
+
+volumes:
+  prometheus-data:
+  grafana-data:

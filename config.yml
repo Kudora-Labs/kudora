@@ -1,0 +1,26 @@
+version: 1
+validation: sovereign
+build:
+  main: cmd/kudorad
+default_denom: akud
+accounts:
+- name: alice
+  coins:
+  - 200000000000000000000akud
+- name: bob
+  coins:
+  - 100000000000000000000akud
+client:
+  openapi:
+    path: docs/static/openapi.json
+faucet:
+  name: bob
+  coins:
+  - 1000000000000000000akud
+validators:
+- name: alice
+  bonded: 100000000000000000000akud
+- name: validator1
+  bonded: 200000000000000000000akud
+- name: validator2
+  bonded: 100000000000000000000akud

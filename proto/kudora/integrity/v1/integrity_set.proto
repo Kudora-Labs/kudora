@@ -1,0 +1,26 @@
+syntax = "proto3";
+package kudora.integrity.v1;
+
+import "gogoproto/gogo.proto";
+import "kudora/integrity/v1/integrity_record.proto";
+
+option go_package = "github.com/Kudora-Labs/kudora/x/integrity/types";
+
+// IntegritySet defines the IntegritySet message.
+message IntegritySet {
+  
+  string tenant = 1; 
+  string type = 2; 
+  string period = 3; 
+  string root = 4; 
+  string creator = 5; 
+  uint64 block_height = 6; 
+  string block_time = 7; 
+  uint64 record_count = 8; 
+}
+
+// IntegritySetBundle defines one integrity set together with its sorted records.
+message IntegritySetBundle {
+  IntegritySet set = 1 [(gogoproto.nullable) = false];
+  repeated IntegrityRecord records = 2 [(gogoproto.nullable) = false];
+}

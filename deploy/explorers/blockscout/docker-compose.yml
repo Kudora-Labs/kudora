@@ -1,0 +1,133 @@
+services:
+  kudora-blockscout-db:
+    image: postgres:17
+    container_name: kudora-blockscout-db
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - client_connection_check_interval=60000
+    environment:
+      POSTGRES_DB: blockscout
+      POSTGRES_USER: blockscout
+      POSTGRES_PASSWORD: blockscout
+    volumes:
+      - blockscout-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blockscout -d blockscout"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - blockscout-internal
+
+  kudora-blockscout-redis:
+    image: redis:7-alpine
+    container_name: kudora-blockscout-redis
+    command: redis-server
+    volumes:
+      - blockscout-redis:/data
+    restart: unless-stopped
+    networks:
+      - blockscout-internal
+
+  kudora-blockscout-backend:
+    image: ${BLOCKSCOUT_BACKEND_IMAGE}
+    container_name: kudora-blockscout-backend
+    depends_on:
+      kudora-blockscout-db:
+        condition: service_healthy
+      kudora-blockscout-redis:
+        condition: service_started
+    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    stop_grace_period: 5m
+    environment:
+      ETHEREUM_JSONRPC_VARIANT: geth
+      ETHEREUM_JSONRPC_TRANSPORT: http
+      ETHEREUM_JSONRPC_HTTP_URL: http://kudora-validator-0:8545/
+      ETHEREUM_JSONRPC_TRACE_URL: http://kudora-validator-0:8545/
+      ETHEREUM_JSONRPC_WS_URL: ws://kudora-validator-0:8546/
+      ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES: "true"
+      DATABASE_URL: postgresql://blockscout:blockscout@kudora-blockscout-db:5432/blockscout
+      ECTO_USE_SSL: "false"
+      ECTO_SSL_MODE: disable
+      SECRET_KEY_BASE: 56NtB48ear7wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN
+      PORT: "4000"
+      CHAIN_ID: "120001"
+      NETWORK: Kudora Localnet
+      SUBNETWORK: Kudora Localnet
+      COIN_NAME: Kudora
+      COIN: KUD
+      DISABLE_MARKET: "true"
+      DISABLE_EXCHANGE_RATES: "true"
+      INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER: "true"
+      API_V1_READ_METHODS_DISABLED: "false"
+      API_V1_WRITE_METHODS_DISABLED: "false"
+      RELEASE_LINK: ""
+    volumes:
+      - blockscout-logs:/app/logs
+      - blockscout-dets:/app/dets
+    restart: unless-stopped
+    networks:
+      - blockscout-internal
+      - kudora-localnet
+
+  kudora-blockscout-frontend:
+    image: ${BLOCKSCOUT_FRONTEND_IMAGE}
+    container_name: kudora-blockscout-frontend
+    depends_on:
+      kudora-blockscout-backend:
+        condition: service_started
+    environment:
+      NEXT_PUBLIC_API_HOST: localhost:4000
+      NEXT_PUBLIC_API_PROTOCOL: http
+      NEXT_PUBLIC_API_BASE_PATH: /
+      NEXT_PUBLIC_APP_HOST: localhost:4000
+      NEXT_PUBLIC_APP_PROTOCOL: http
+      NEXT_PUBLIC_STATS_API_HOST: ""
+      NEXT_PUBLIC_NETWORK_NAME: Kudora Localnet
+      NEXT_PUBLIC_NETWORK_SHORT_NAME: Kudora
+      NEXT_PUBLIC_NETWORK_ID: "120001"
+      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: Kudora
+      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: KUD
+      NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS: "18"
+      NEXT_PUBLIC_NETWORK_RPC_URL: http://localhost:8545/
+      NEXT_PUBLIC_IS_TESTNET: "true"
+      NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL: ws
+    restart: unless-stopped
+    networks:
+      - blockscout-internal
+
+  kudora-blockscout-proxy:
+    image: nginx:1.27-alpine
+    container_name: kudora-blockscout-proxy
+    depends_on:
+      kudora-blockscout-backend:
+        condition: service_started
+      kudora-blockscout-frontend:
+        condition: service_started
+    environment:
+      BACK_PROXY_PASS: http://kudora-blockscout-backend:4000
+      FRONT_PROXY_PASS: http://kudora-blockscout-frontend:3000
+    ports:
+      - "4000:80"
+    volumes:
+      - ./proxy/explorer.conf.template:/etc/nginx/templates/default.conf.template:ro
+    restart: unless-stopped
+    networks:
+      - blockscout-internal
+
+volumes:
+  blockscout-db:
+  blockscout-redis:
+  blockscout-logs:
+  blockscout-dets:
+
+networks:
+  blockscout-internal:
+  kudora-localnet:
+    external: true
+    name: ${LOCALNET_DOCKER_NETWORK:-kudora-localnet}

@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package kudora.integrity.v1;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "kudora/integrity/v1/integrity_record.proto";
+import "kudora/integrity/v1/integrity_set.proto";
+import "kudora/integrity/v1/params.proto";
+import "kudora/integrity/v1/tenant.proto";
+
+option go_package = "github.com/Kudora-Labs/kudora/x/integrity/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/kudora/integrity/v1/params";
+  
+  }
+  
+  // Tenant returns one registered tenant.
+  rpc Tenant (QueryTenantRequest) returns (QueryTenantResponse) {
+    option (google.api.http).get = "/kudora/integrity/v1/tenant/{tenant}";
+  
+  }
+  
+  // IntegritySet returns one committed integrity set with all of its records.
+  rpc IntegritySet (QueryIntegritySetRequest) returns (QueryIntegritySetResponse) {
+    option (google.api.http).get = "/kudora/integrity/v1/set/{tenant}/{type}/{period}";
+  
+  }
+  
+  // IntegrityRecord returns one encrypted record from a committed integrity set.
+  rpc IntegrityRecord (QueryIntegrityRecordRequest) returns (QueryIntegrityRecordResponse) {
+    option (google.api.http).get = "/kudora/integrity/v1/record/{tenant}/{type}/{period}/{tag}";
+  
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// QueryTenantRequest defines the QueryTenantRequest message.
+message QueryTenantRequest {
+  string tenant = 1;
+}
+
+// QueryTenantResponse defines the QueryTenantResponse message.
+message QueryTenantResponse {
+  Tenant tenant = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryIntegritySetRequest defines the QueryIntegritySetRequest message.
+message QueryIntegritySetRequest {
+  string tenant = 1;
+  string type = 2;
+  string period = 3;
+}
+
+// QueryIntegritySetResponse defines the QueryIntegritySetResponse message.
+message QueryIntegritySetResponse {
+  IntegritySet set = 1 [(gogoproto.nullable) = false];
+  repeated IntegrityRecord records = 2 [(gogoproto.nullable) = false];
+}
+
+// QueryIntegrityRecordRequest defines the QueryIntegrityRecordRequest message.
+message QueryIntegrityRecordRequest {
+  string tenant = 1;
+  string type = 2;
+  string period = 3;
+  string tag = 4;
+}
+
+// QueryIntegrityRecordResponse defines the QueryIntegrityRecordResponse message.
+message QueryIntegrityRecordResponse {
+  IntegritySet set = 1 [(gogoproto.nullable) = false];
+  IntegrityRecord record = 2 [(gogoproto.nullable) = false];
+}

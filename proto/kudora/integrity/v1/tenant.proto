@@ -1,0 +1,14 @@
+syntax = "proto3";
+package kudora.integrity.v1;
+
+option go_package = "github.com/Kudora-Labs/kudora/x/integrity/types";
+
+// Tenant defines the Tenant message.
+message Tenant {
+  
+  string tenant = 1; 
+  string owner = 2; 
+  uint64 created_height = 3; 
+  string created_time = 4; 
+  string pending_owner = 5;
+}

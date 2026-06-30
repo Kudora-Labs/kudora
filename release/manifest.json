@@ -1,0 +1,46 @@
+{
+  "release_version": "v0.1.0-rc.1",
+  "release_track": "candidate",
+  "release_type": "devnet_candidate",
+  "mainnet_launch_ready": false,
+  "mainnet_launch_ready_reason": "generated temporary public allocation addresses for Phase 16.1 validation; missing real validator gentx files",
+  "git_commit": "8b7327db7926d9f3033a0b32fdb84e4dca9f174f",
+  "git_branch": "Upgrade",
+  "build_timestamp_utc": "2026-06-28T09:03:01Z",
+  "go_version": "go version go1.26.4 darwin/arm64",
+  "binary_name": "kudorad",
+  "app_name": "kudora",
+  "chain_id": "kudora_12000-1",
+  "evm_chain_id": 120001,
+  "eth_chainId": "0x1d4c1",
+  "denom": "akud",
+  "display_denom": "KUD",
+  "decimals": 18,
+  "cosmos_sdk_version": "v0.54.3",
+  "cometbft_version": "v0.39.3",
+  "cosmos_evm_version": "v0.7.0",
+  "wasmd_version": "v0.70.3",
+  "wasmvm_version": "v3.0.7",
+  "candidate_genesis_sha256": "bf18697bca0cba51dcfc1d0820f5fd95f6f81facb1eab139eed4931d503d31ae",
+  "allocations_sha256": "8f93cca002041efb85efdc3268a71d5e7f41ca9fedd509665862cada59b66444",
+  "release_artifacts": [
+    {
+      "path": "out/release/kudora-v0.1.0-rc.1-linux-amd64.tar.gz",
+      "kind": "binary_tarball",
+      "platform": "linux/amd64"
+    },
+    {
+      "path": "out/release/kudora-v0.1.0-rc.1-source-context.zip",
+      "kind": "source_context"
+    }
+  ],
+  "docker_image_tags": [
+    "kudora/kudorad:v0.1.0-rc.1",
+    "kudora/kudorad:latest-rc"
+  ],
+  "cosmovisor_supported": true,
+  "cosmovisor_auto_download_default": false,
+  "no_registry_push": true,
+  "no_github_release": true,
+  "no_git_tag": true
+}

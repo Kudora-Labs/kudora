@@ -1,0 +1,37 @@
+{
+  "chain_name": "Kudora Localnet",
+  "chain_id": "kudora_12000-1",
+  "api": [
+    {
+      "provider": "localnet",
+      "address": "http://localhost:1317"
+    }
+  ],
+  "rpc": [
+    {
+      "provider": "localnet",
+      "address": "http://localhost:26657"
+    }
+  ],
+  "grpc": [
+    {
+      "provider": "localnet",
+      "address": "localhost:9090"
+    }
+  ],
+  "sdk_version": "0.54.3",
+  "coin_type": "60",
+  "min_tx_fee": "0",
+  "addr_prefix": "kudo",
+  "logo": "",
+  "theme_color": "#1f6a5f",
+  "assets": [
+    {
+      "base": "akud",
+      "symbol": "KUD",
+      "exponent": "18",
+      "coingecko_id": "",
+      "logo": ""
+    }
+  ]
+}

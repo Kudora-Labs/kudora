@@ -1,0 +1,19 @@
+services:
+  kudora-ping-dashboard:
+    image: ${PING_DASHBOARD_IMAGE:-kudora/ping-dashboard:localnet}
+    build:
+      context: ../../..
+      dockerfile: deploy/explorers/ping-dashboard/Dockerfile
+      args:
+        PING_DASHBOARD_COMMIT: ${PING_DASHBOARD_UPSTREAM_COMMIT:-f001c4f40256d883c67cfdefdbd5c70414de17c9}
+    container_name: kudora-ping-dashboard
+    ports:
+      - "18088:80"
+    restart: unless-stopped
+    networks:
+      - kudora-localnet
+
+networks:
+  kudora-localnet:
+    external: true
+    name: ${LOCALNET_DOCKER_NETWORK:-kudora-localnet}

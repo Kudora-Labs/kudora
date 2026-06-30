@@ -1,0 +1,25 @@
+{
+  "chain_id": "kudora_12000-1",
+  "genesis_time": "2026-08-01T12:00:00Z",
+  "candidate_only": true,
+  "candidate_reason": "generated temporary public allocation addresses for Phase 16.1 validation",
+  "denom": "akud",
+  "display_denom": "KUD",
+  "decimals": 18,
+  "total_supply": "65100000000000000000000000",
+  "allocations": [
+    {
+      "name": "mainnet_allocation_1",
+      "address": "kudo1jn88nvjwd57x4eca8u6lepumtgh7ums3fdn74g",
+      "amount": "1310000000000000000000000"
+    },
+    {
+      "name": "mainnet_allocation_2",
+      "address": "kudo139hyyr423xdzg77qzg239tsh6dfm672awl2mde",
+      "amount": "5200000000000000000000000"
+    }
+  ],
+  "community_pool": {
+    "amount": "58590000000000000000000000"
+  }
+}

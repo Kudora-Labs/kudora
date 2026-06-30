@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package kudora.integrity.v1;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "kudora/integrity/v1/integrity_record.proto";
+import "kudora/integrity/v1/params.proto";
+
+option go_package = "github.com/Kudora-Labs/kudora/x/integrity/types";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+  
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  
+  // RegisterTenant defines the RegisterTenant RPC.
+  rpc RegisterTenant (MsgRegisterTenant) returns (MsgRegisterTenantResponse);
+
+  // TransferTenantOwnership defines the TransferTenantOwnership RPC.
+  rpc TransferTenantOwnership (MsgTransferTenantOwnership) returns (MsgTransferTenantOwnershipResponse);
+
+  // AcceptTenantOwnership defines the AcceptTenantOwnership RPC.
+  rpc AcceptTenantOwnership (MsgAcceptTenantOwnership) returns (MsgAcceptTenantOwnershipResponse);
+
+  // CancelTenantOwnershipTransfer defines the CancelTenantOwnershipTransfer RPC.
+  rpc CancelTenantOwnershipTransfer (MsgCancelTenantOwnershipTransfer) returns (MsgCancelTenantOwnershipTransferResponse);
+  
+  // CommitIntegritySet defines the CommitIntegritySet RPC.
+  rpc CommitIntegritySet (MsgCommitIntegritySet) returns (MsgCommitIntegritySetResponse);
+}
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) =                          "authority";
+  option           (amino.name) = "kudora/x/integrity/MsgUpdateParams";
+  
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // params defines the module parameters to update.
+  
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+// MsgRegisterTenant defines the MsgRegisterTenant message.
+message MsgRegisterTenant {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string tenant  = 2;
+}
+
+// MsgRegisterTenantResponse defines the MsgRegisterTenantResponse message.
+message MsgRegisterTenantResponse {}
+
+// MsgTransferTenantOwnership defines the MsgTransferTenantOwnership message.
+message MsgTransferTenantOwnership {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string tenant = 2;
+  string new_owner = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// MsgTransferTenantOwnershipResponse defines the MsgTransferTenantOwnershipResponse message.
+message MsgTransferTenantOwnershipResponse {}
+
+// MsgAcceptTenantOwnership defines the MsgAcceptTenantOwnership message.
+message MsgAcceptTenantOwnership {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string tenant = 2;
+}
+
+// MsgAcceptTenantOwnershipResponse defines the MsgAcceptTenantOwnershipResponse message.
+message MsgAcceptTenantOwnershipResponse {}
+
+// MsgCancelTenantOwnershipTransfer defines the MsgCancelTenantOwnershipTransfer message.
+message MsgCancelTenantOwnershipTransfer {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string tenant = 2;
+}
+
+// MsgCancelTenantOwnershipTransferResponse defines the MsgCancelTenantOwnershipTransferResponse message.
+message MsgCancelTenantOwnershipTransferResponse {}
+
+// MsgCommitIntegritySet defines the MsgCommitIntegritySet message.
+message MsgCommitIntegritySet {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string tenant = 2;
+  string type = 3;
+  string period = 4;
+  string root = 5;
+  repeated IntegrityRecord records = 6 [(gogoproto.nullable) = false];
+}
+
+// MsgCommitIntegritySetResponse defines the MsgCommitIntegritySetResponse message.
+message MsgCommitIntegritySetResponse {}

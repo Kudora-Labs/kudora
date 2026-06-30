@@ -1,0 +1,12 @@
+syntax = "proto3";
+package kudora.integrity.v1;
+
+option go_package = "github.com/Kudora-Labs/kudora/x/integrity/types";
+
+// IntegrityRecord defines the IntegrityRecord message.
+message IntegrityRecord {
+  
+  string tag = 1; 
+  string nonce = 2; 
+  string ciphertext = 3; 
+}

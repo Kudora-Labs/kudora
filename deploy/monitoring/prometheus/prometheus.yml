@@ -1,0 +1,76 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 10s
+
+rule_files:
+  - /etc/prometheus/alert-rules.yml
+
+scrape_configs:
+  - job_name: kudora-cometbft
+    static_configs:
+      - targets:
+          - kudora-validator-0:26660
+
+  - job_name: kudora-rpc-status
+    metrics_path: /probe
+    params:
+      module:
+        - http_get_2xx
+    static_configs:
+      - targets:
+          - http://kudora-validator-0:26657/status
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: kudora-rest-node-info
+    metrics_path: /probe
+    params:
+      module:
+        - http_get_2xx
+    static_configs:
+      - targets:
+          - http://kudora-validator-0:1317/cosmos/base/tendermint/v1beta1/node_info
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: kudora-evm-chainid
+    metrics_path: /probe
+    params:
+      module:
+        - kudora_eth_chainid
+    static_configs:
+      - targets:
+          - http://kudora-validator-0:8545
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: grafana-health
+    metrics_path: /probe
+    params:
+      module:
+        - http_get_2xx
+    static_configs:
+      - targets:
+          - http://grafana:3000/api/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

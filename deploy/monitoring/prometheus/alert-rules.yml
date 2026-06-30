@@ -1,0 +1,38 @@
+groups:
+  - name: kudora-localnet
+    rules:
+      - alert: KudoraCometBFTMetricsDown
+        expr: up{job="kudora-cometbft"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Kudora CometBFT metrics endpoint is down
+          description: Prometheus cannot scrape the Kudora localnet CometBFT metrics endpoint.
+
+      - alert: KudoraRPCProbeFailed
+        expr: probe_success{job="kudora-rpc-status"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Kudora RPC probe failed
+          description: The localnet CometBFT RPC /status probe is failing.
+
+      - alert: KudoraRESTProbeFailed
+        expr: probe_success{job="kudora-rest-node-info"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Kudora REST probe failed
+          description: The localnet Cosmos REST node-info probe is failing.
+
+      - alert: KudoraEVMChainIDProbeFailed
+        expr: probe_success{job="kudora-evm-chainid"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Kudora EVM chain ID probe failed
+          description: The localnet EVM JSON-RPC endpoint is not returning the expected eth_chainId 0x1d4c1.

@@ -1,339 +1,264 @@
-#!/usr/bin/make -f
+BINARY := kudorad
+OUT_DIR := out
+BUILD_DIR := build
+DOCKER_IMAGE := kudora/kudorad:localnet
+PING_DASHBOARD_IMAGE := kudora/ping-dashboard:localnet
 
-PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
-COMMIT := $(shell git log -1 --format='%H')
-LEDGER_ENABLED ?= true
-SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
-BINDIR ?= $(GOPATH)/bin
-SIMAPP = ./app
+.PHONY: build install test tidy lint verify-no-forks verify-clean-reset verify-no-secrets verify-integrity-generic dependency-audit audit-evm-precompile-surface assert-evm-precompile-policy vulncheck phase0-validate phase0.1-validate phase-1-validate phase-2-validate phase-2.1-validate phase-3-validate phase-3.2-validate phase-4-validate phase-5-validate phase-5.1-validate phase-12-validate phase-12.1-lite-validate phase-13-validate phase-13.1-validate phase-14-validate phase-15-validate phase-16-validate phase-16.1-validate phase-17-validate docker-build docker-version docker-smoke-test evm-smoke-test evm-transaction-smoke-test evm-contract-smoke-test wasm-smoke-test integrity-smoke-test localnet-init localnet-up localnet-down localnet-reset localnet-logs localnet-smoke-test blockscout-up blockscout-down blockscout-reset blockscout-smoke-test ping-dashboard-up ping-dashboard-down ping-dashboard-reset ping-dashboard-smoke-test explorers-up explorers-down explorers-reset explorers-logs explorers-smoke-test monitoring-up monitoring-down monitoring-reset monitoring-logs monitoring-smoke-test mainnet-genesis-build mainnet-genesis-validate mainnet-genesis-inspect-supply mainnet-genesis-inspect-policy release-build-binaries release-package release-verify release-docker-build release-docker-verify cosmovisor-image-build cosmovisor-layout-verify cosmovisor-smoke-test zip
 
-# for dockerized protobuf tools
-DOCKER := $(shell which docker)
-HTTPS_GIT := github.com/Kudora-Labs/kudora.git
+build:
+	@mkdir -p $(BUILD_DIR)
+	@go build -o $(BUILD_DIR)/$(BINARY) ./cmd/$(BINARY)
 
-export GO111MODULE = on
+install:
+	@go install ./cmd/$(BINARY)
 
-# don't override user values
-ifeq (,$(VERSION))
-  VERSION := $(shell git describe --tags --always)
-  # if VERSION is empty, then populate it with branch's name and raw commit hash
-  ifeq (,$(VERSION))
-    VERSION := $(BRANCH)-$(COMMIT)
-  endif
-endif
+test:
+	@go test ./...
 
-# process build tags
-
-build_tags = netgo
-ifeq ($(LEDGER_ENABLED),true)
-  ifeq ($(OS),Windows_NT)
-    GCCEXE = $(shell where gcc.exe 2> NUL)
-    ifeq ($(GCCEXE),)
-      $(error gcc.exe not installed for ledger support, please install or set LEDGER_ENABLED=false)
-    else
-      build_tags += ledger
-    endif
-  else
-    UNAME_S = $(shell uname -s)
-    ifeq ($(UNAME_S),OpenBSD)
-      $(warning OpenBSD detected, disabling ledger support (https://github.com/cosmos/cosmos-sdk/issues/1988))
-    else
-      GCC = $(shell command -v gcc 2> /dev/null)
-      ifeq ($(GCC),)
-        $(error gcc not installed for ledger support, please install or set LEDGER_ENABLED=false)
-      else
-        build_tags += ledger
-      endif
-    endif
-  endif
-endif
-
-ifeq ($(WITH_CLEVELDB),yes)
-  build_tags += gcc
-endif
-build_tags += $(BUILD_TAGS)
-build_tags := $(strip $(build_tags))
-
-whitespace :=
-empty = $(whitespace) $(whitespace)
-comma := ,
-build_tags_comma_sep := $(subst $(empty),$(comma),$(build_tags))
-
-# process linker flags
-
-# flags '-s -w' resolves an issue with xcode 16 and signing of go binaries
-# ref: https://github.com/golang/go/issues/63997
-ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=kudora \
-		  -X github.com/cosmos/cosmos-sdk/version.AppName=kudorad \
-		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
-		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
-		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
-		  -s -w
-
-ifeq ($(WITH_CLEVELDB),yes)
-  ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
-endif
-ifeq ($(LINK_STATICALLY),true)
-	ldflags += -linkmode=external -extldflags "-Wl,-z,muldefs -static"
-endif
-ldflags += $(LDFLAGS)
-ldflags := $(strip $(ldflags))
-
-BUILD_FLAGS := -tags "$(build_tags_comma_sep)" -ldflags '$(ldflags)' -trimpath
-
-# The below include contains the tools and runsim targets.
-include contrib/devtools/Makefile
-
-all: install lint test
-
-build: go.sum
-ifeq ($(OS),Windows_NT)
-	$(error wasmd server not supported. Use "make build-windows-client" for client)
-	exit 1
-else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/kudorad ./cmd/kudorad
-endif
-
-build-windows-client: go.sum
-	GOOS=windows GOARCH=amd64 go build -mod=readonly $(BUILD_FLAGS) -o build/kudorad.exe ./cmd/kudorad
-
-build-contract-tests-hooks:
-ifeq ($(OS),Windows_NT)
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests.exe ./cmd/contract_tests
-else
-	go build -mod=readonly $(BUILD_FLAGS) -o build/contract_tests ./cmd/contract_tests
-endif
-
-install: go.sum
-	go install -mod=readonly $(BUILD_FLAGS) ./cmd/kudorad
-
-########################################
-### Tools & dependencies
-
-go-mod-cache: go.sum
-	@echo "--> Download go modules to local cache"
-	@go mod download
-
-go.sum: go.mod
-	@echo "--> Ensure dependencies have not been modified"
-	@go mod verify
-
-draw-deps:
-	@# requires brew install graphviz or apt-get install graphviz
-	go install github.com/RobotsAndPencils/goviz@latest
-	@goviz -i ./cmd/kudorad -d 2 | dot -Tpng -o dependency-graph.png
-
-clean:
-	rm -rf snapcraft-local.yaml build/
-
-distclean: clean
-	rm -rf vendor/
-
-########################################
-### Testing
-
-test: test-unit
-test-all: test-race test-cover test-system
-
-test-unit:
-	@VERSION=$(VERSION) go test -mod=readonly -tags='ledger test_ledger_mock' ./...
-
-test-race:
-	@VERSION=$(VERSION) go test -mod=readonly -race -tags='ledger test_ledger_mock' ./...
-
-test-cover:
-	@go test -mod=readonly -timeout 30m -race -coverprofile=coverage.txt -covermode=atomic -tags='ledger test_ledger_mock' ./...
-
-benchmark:
-	@go test -mod=readonly -bench=. ./...
-
-test-sim-import-export: runsim
-	@echo "Running application import/export simulation. This may take several minutes..."
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestAppImportExport
-
-test-sim-multi-seed-short: runsim
-	@echo "Running short multi-seed application simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 50 5 TestFullAppSimulation
-
-test-sim-deterministic: runsim
-	@echo "Running application deterministic simulation. This may take awhile!"
-	@$(BINDIR)/runsim -Jobs=4 -SimAppPkg=$(SIMAPP) -ExitOnFail 1 1 TestAppStateDeterminism
-
-test-system: install
-	$(MAKE) -C tests/system/ test
-
-###############################################################################
-###                                Linting                                  ###
-###############################################################################
-
-format-tools:
-	go install mvdan.cc/gofumpt@v0.4.0
-	go install github.com/client9/misspell/cmd/misspell@v0.3.4
-	go install github.com/daixiang0/gci@v0.11.2
-
-lint: format-tools
-	golangci-lint run --tests=false
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "*_test.go" | xargs gofumpt -d
-
-format: format-tools
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gofumpt -w
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs misspell -w
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "./tests/system/vendor*" -not -path "*.git*" -not -path "./client/lcd/statik/statik.go" | xargs gci write --skip-generated -s standard -s default -s "prefix(cosmossdk.io)" -s "prefix(github.com/cosmos/cosmos-sdk)" -s "prefix(github.com/CosmWasm/wasmd)" --custom-order
-
-mod-tidy:
-	go mod tidy
-	cd interchaintest && go mod tidy
-
-.PHONY: format-tools lint format mod-tidy
-
-
-###############################################################################
-###                                Protobuf                                 ###
-###############################################################################
-CURRENT_UID := $(shell id -u)
-CURRENT_GID := $(shell id -g)
-
-protoVer=0.13.2
-protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
-protoImage="$(DOCKER)" run -e BUF_CACHE_DIR=/tmp/buf --rm -v "$(CURDIR)":/workspace:rw --user ${CURRENT_UID}:${CURRENT_GID} --workdir /workspace $(protoImageName)
-
-proto-all: proto-format proto-lint proto-gen format
-
-proto-gen:
-	@go install cosmossdk.io/orm/cmd/protoc-gen-go-cosmos-orm@v1.0.0-beta.3
-	@echo "Generating Protobuf files"
-	@$(protoImage) sh ./scripts/protocgen.sh
-# generate the stubs for the proto files from the proto directory
-	@spawn stub-gen
+tidy:
 	@go mod tidy
 
-proto-format:
-	@echo "Formatting Protobuf files"
-	@$(protoImage) find ./ -name "*.proto" -exec clang-format -i {} \;
+lint:
+	@go vet ./...
 
-proto-swagger-gen:
-	@./scripts/protoc-swagger-gen.sh
+verify-no-forks:
+	@./scripts/verify-no-forks.sh
 
-proto-lint:
-	@$(protoImage) buf lint --error-format=json
+verify-clean-reset:
+	@./scripts/verify-clean-reset.sh
 
-proto-check-breaking:
-	@$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
+verify-no-secrets:
+	@./scripts/verify-no-secrets.sh
 
-.PHONY: all install install-debug \
-	go-mod-cache draw-deps clean build format \
-	test test-all test-build test-cover test-unit test-race \
-	test-sim-import-export build-windows-client \
-	test-system
+verify-integrity-generic:
+	@./scripts/verify-integrity-generic.sh
 
-## --- Testnet Utilities ---
-get-localic:
-	@echo "Installing local-interchain"
-	git clone --depth 1 --branch v8.7.0 https://github.com/strangelove-ventures/interchaintest.git interchaintest-downloader
-	cd interchaintest-downloader/local-interchain && make install
-	@sleep 0.1
-	@echo ✅ local-interchain installed $(shell which local-ic)
+dependency-audit:
+	@./scripts/dependency-audit.sh
 
-is-localic-installed:
-ifeq (,$(shell which local-ic))
-	make get-localic
-endif
+audit-evm-precompile-surface:
+	@./scripts/audit-evm-precompile-surface.sh
 
-get-heighliner:
-	@echo ⏳ Installing heighliner...
-	git clone --depth 1 https://github.com/strangelove-ventures/heighliner.git
-	cd heighliner && go install
-	@sleep 0.1
-	@echo ✅ heighliner installed to $(shell which heighliner)
+assert-evm-precompile-policy:
+	@./scripts/assert-evm-precompile-policy.sh
 
-local-image:
-ifeq (,$(shell which heighliner))
-	echo 'heighliner' binary not found. Consider running `make get-heighliner`
-else
-	heighliner build -c kudora --local -f chains.yaml
-endif
+vulncheck:
+	@./scripts/vulncheck.sh
 
-.PHONY: get-heighliner local-image is-localic-installed
+phase0-validate:
+	@./scripts/phase-0-validate.sh
 
-###############################################################################
-###                                     e2e                                 ###
-###############################################################################
+phase0.1-validate:
+	@./scripts/phase-0.1-validate.sh
 
-ictest-basic:
-	@echo "Running basic e2e test"
-	@cd interchaintest && go test -race -v -run TestBasicChain .
+phase-1-validate:
+	@./scripts/phase-1-validate.sh
 
-ictest-ibc:
-	@echo "Running IBC e2e test"
-	@cd interchaintest && go test -race -v -run TestIBCBasic .
+phase-2-validate:
+	@./scripts/phase-2-validate.sh
 
-ictest-wasm:
-	@echo "Running cosmwasm e2e test"
-	@cd interchaintest && go test -race -v -run TestCosmWasmIntegration .
+phase-2.1-validate:
+	@./scripts/phase-2.1-validate.sh
 
-ictest-packetforward:
-	@echo "Running packet forward middleware e2e test"
-	@cd interchaintest && go test -race -v -run TestPacketForwardMiddleware .
+phase-3-validate:
+	@./scripts/phase-3-validate.sh
 
-ictest-poa:
-	@echo "Running proof of authority e2e test"
-	@cd interchaintest && go test -race -v -run TestPOA .
+phase-3.2-validate:
+	@./scripts/phase-3.2-validate.sh
 
-ictest-tokenfactory:
-	@echo "Running token factory e2e test"
-	@cd interchaintest && go test -race -v -run TestTokenFactory .
+phase-4-validate:
+	@./scripts/phase-4-validate.sh
 
-ictest-ratelimit:
-	@echo "Running rate limit e2e test"
-	@cd interchaintest && go test -race -v -run TestIBCRateLimit .
+phase-5-validate:
+	@./scripts/phase-5-validate.sh
 
-###############################################################################
-###                                    testnet                              ###
-###############################################################################
+phase-5.1-validate:
+	@./scripts/phase-5.1-validate.sh
 
-setup-testnet: mod-tidy is-localic-installed install local-image set-testnet-configs setup-testnet-keys
+phase-12-validate:
+	@./scripts/phase-12-validate.sh
 
-# Run this before testnet keys are added
-# This chain id is used in the testnet.json as well
-set-testnet-configs:
-	kudorad config set client chain-id localchain_9000-1
-	kudorad config set client keyring-backend test
-	kudorad config set client output text
+phase-12.1-lite-validate:
+	@./scripts/phase-12.1-lite-validate.sh
 
-# import keys from testnet.json into test keyring
-setup-testnet-keys:
-	-`echo "decorate bright ozone fork gallery riot bus exhaust worth way bone indoor calm squirrel merry zero scheme cotton until shop any excess stage laundry" | kudorad keys add acc0 --recover`
-	-`echo "wealth flavor believe regret funny network recall kiss grape useless pepper cram hint member few certain unveil rather brick bargain curious require crowd raise" | kudorad keys add acc1 --recover`
+phase-13-validate:
+	@./scripts/phase-13-validate.sh
 
-testnet: setup-testnet
-	spawn local-ic start testnet
+phase-13.1-validate:
+	@./scripts/phase-13.1-validate.sh
 
-sh-testnet: mod-tidy
-	CHAIN_ID="localchain_9000-1" BLOCK_TIME="1000ms" CLEAN=true sh scripts/test_node.sh
+phase-14-validate:
+	@./scripts/phase-14-validate.sh
 
-.PHONY: setup-testnet set-testnet-configs testnet testnet-basic sh-testnet
+phase-15-validate:
+	@./scripts/phase-15-validate.sh
 
-###############################################################################
-###                                     help                                ###
-###############################################################################
+phase-16-validate:
+	@./scripts/phase-16-validate.sh
 
-.PHONY: generate-webapp
-generate-webapp:
-	sudo npm install --global create-cosmos-app
-	cca --name web -e spawn
+phase-16.1-validate:
+	@./scripts/phase-16.1-validate.sh
 
-help:
-	@echo "Usage: make <target>"
-	@echo ""
-	@echo "Available targets:"
-	@echo "  install             : Install the binary"
-	@echo "  local-image         : Install the docker image"
-	@echo "  proto-gen           : Generate code from proto files"
-	@echo "  testnet             : Local devnet with IBC"
-	@echo "  sh-testnet          : Shell local devnet"
-	@echo "  ictest-basic        : Basic end-to-end test"
-	@echo "  ictest-ibc          : IBC end-to-end test"
-	@echo "  generate-webapp     : Create a new webapp template"
+phase-17-validate:
+	@./scripts/phase-17-validate.sh
 
-.PHONY: help
+docker-build:
+	@DOCKER_BUILDKIT=1 docker buildx build --load --tag $(DOCKER_IMAGE) --file Dockerfile .
+
+docker-version:
+	@docker run --rm $(DOCKER_IMAGE)
+
+docker-smoke-test:
+	@docker run --rm $(DOCKER_IMAGE) version --long >/dev/null
+	@docker run --rm $(DOCKER_IMAGE) --help >/dev/null
+	@user="$$(docker image inspect $(DOCKER_IMAGE) --format '{{.Config.User}}')"; \
+		if [ -z "$$user" ] || [ "$$user" = "0" ] || [ "$$user" = "root" ]; then \
+			echo "docker-smoke-test: image must run as a non-root user" >&2; \
+			exit 1; \
+		fi
+	@ports="$$(docker image inspect $(DOCKER_IMAGE) --format '{{json .Config.ExposedPorts}}')"; \
+		printf '%s\n' "$$ports" | rg '"26656/tcp"' >/dev/null; \
+		printf '%s\n' "$$ports" | rg '"26657/tcp"' >/dev/null; \
+		printf '%s\n' "$$ports" | rg '"1317/tcp"' >/dev/null; \
+		printf '%s\n' "$$ports" | rg '"9090/tcp"' >/dev/null; \
+		printf '%s\n' "$$ports" | rg '"8545/tcp"' >/dev/null; \
+		printf '%s\n' "$$ports" | rg '"8546/tcp"' >/dev/null
+	@cid="$$(docker create $(DOCKER_IMAGE))"; \
+		trap 'docker rm -f "$$cid" >/dev/null 2>&1 || true' EXIT; \
+		docker export "$$cid" | tar -tf - | { \
+			if rg -n '(^|/)\.kudora/|(^|/)\.env(\..*)?$$|(^|/)priv_validator_key\.json$$|(^|/)node_key\.json$$|(^|/)key_seed\.json$$|\.pem$$|\.key$$|\.seed$$|\.mnemonic$$' >/dev/null; then \
+				echo "docker-smoke-test: forbidden local state or secret-bearing files found in image filesystem" >&2; \
+				exit 1; \
+			fi; \
+		}
+
+evm-smoke-test:
+	@./scripts/evm-smoke-test.sh
+
+evm-transaction-smoke-test:
+	@./scripts/evm-transaction-smoke-test.sh
+
+evm-contract-smoke-test:
+	@./scripts/evm-contract-smoke-test.sh
+
+wasm-smoke-test:
+	@./scripts/wasm-smoke-test.sh
+
+integrity-smoke-test:
+	@./scripts/integrity-smoke-test.sh
+
+localnet-init:
+	@./deploy/localnet/scripts/init-localnet.sh
+
+localnet-up:
+	@./deploy/localnet/scripts/start-localnet.sh
+
+localnet-down:
+	@./deploy/localnet/scripts/reset-localnet.sh --keep-state
+
+localnet-reset:
+	@./deploy/localnet/scripts/reset-localnet.sh
+
+localnet-logs:
+	@./deploy/localnet/scripts/start-localnet.sh --logs
+
+localnet-smoke-test:
+	@./deploy/localnet/scripts/smoke-localnet.sh
+
+blockscout-up:
+	@./deploy/explorers/blockscout/scripts/start-blockscout.sh
+
+blockscout-down:
+	@./deploy/explorers/blockscout/scripts/stop-blockscout.sh
+
+blockscout-reset:
+	@./deploy/explorers/blockscout/scripts/reset-blockscout.sh
+
+blockscout-smoke-test:
+	@./deploy/explorers/blockscout/scripts/smoke-blockscout.sh
+
+ping-dashboard-up:
+	@./deploy/explorers/ping-dashboard/scripts/start-ping-dashboard.sh
+
+ping-dashboard-down:
+	@./deploy/explorers/ping-dashboard/scripts/stop-ping-dashboard.sh
+
+ping-dashboard-reset:
+	@./deploy/explorers/ping-dashboard/scripts/reset-ping-dashboard.sh
+
+ping-dashboard-smoke-test:
+	@./deploy/explorers/ping-dashboard/scripts/smoke-ping-dashboard.sh
+
+explorers-up:
+	@./deploy/explorers/blockscout/scripts/start-blockscout.sh
+	@./deploy/explorers/ping-dashboard/scripts/start-ping-dashboard.sh
+
+explorers-down:
+	@./deploy/explorers/ping-dashboard/scripts/stop-ping-dashboard.sh
+	@./deploy/explorers/blockscout/scripts/stop-blockscout.sh
+
+explorers-reset:
+	@./deploy/explorers/ping-dashboard/scripts/reset-ping-dashboard.sh
+	@./deploy/explorers/blockscout/scripts/reset-blockscout.sh
+
+explorers-logs:
+	@bash -lc 'source deploy/explorers/common.sh; require_compose; COMPOSE_PROJECT_NAME="kudora-explorers" LOCALNET_DOCKER_NETWORK="$$LOCALNET_DOCKER_NETWORK" BLOCKSCOUT_BACKEND_IMAGE="$$BLOCKSCOUT_BACKEND_IMAGE" BLOCKSCOUT_FRONTEND_IMAGE="$$BLOCKSCOUT_FRONTEND_IMAGE" PING_DASHBOARD_IMAGE="$$PING_DASHBOARD_IMAGE" PING_DASHBOARD_UPSTREAM_COMMIT="$$PING_DASHBOARD_UPSTREAM_COMMIT" "$${COMPOSE_CMD[@]}" -f "$$BLOCKSCOUT_COMPOSE_FILE" -f "$$PING_DASHBOARD_COMPOSE_FILE" logs -f'
+
+explorers-smoke-test:
+	@./deploy/explorers/blockscout/scripts/smoke-blockscout.sh
+	@./deploy/explorers/ping-dashboard/scripts/smoke-ping-dashboard.sh
+
+monitoring-up:
+	@./deploy/monitoring/scripts/start-monitoring.sh
+
+monitoring-down:
+	@./deploy/monitoring/scripts/stop-monitoring.sh
+
+monitoring-reset:
+	@./deploy/monitoring/scripts/reset-monitoring.sh
+
+monitoring-logs:
+	@bash -lc 'source deploy/monitoring/common.sh; monitoring_compose logs -f'
+
+monitoring-smoke-test:
+	@./deploy/monitoring/scripts/smoke-monitoring.sh
+
+mainnet-genesis-build:
+	@./scripts/mainnet/build-genesis.sh
+
+mainnet-genesis-validate:
+	@./scripts/mainnet/validate-genesis.sh
+
+mainnet-genesis-inspect-supply:
+	@./scripts/mainnet/inspect-genesis-supply.sh
+
+mainnet-genesis-inspect-policy:
+	@./scripts/mainnet/inspect-genesis-policy.sh
+
+release-build-binaries:
+	@./scripts/release/build-binaries.sh
+
+release-package:
+	@./scripts/release/package-release.sh
+
+release-verify:
+	@./scripts/release/verify-release.sh
+
+release-docker-build:
+	@./scripts/release/build-docker-image.sh
+
+release-docker-verify:
+	@./scripts/release/verify-docker-image.sh
+
+cosmovisor-image-build:
+	@./scripts/release/build-cosmovisor-image.sh
+
+cosmovisor-layout-verify:
+	@./scripts/release/verify-cosmovisor-layout.sh
+
+cosmovisor-smoke-test:
+	@./deploy/cosmovisor/scripts/smoke-cosmovisor.sh
+
+zip:
+	@./scripts/make-zip.sh
