@@ -31,7 +31,7 @@ jobs:
   launch-testnet:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5.0.0
 
       - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
